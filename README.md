@@ -55,3 +55,5 @@ alfahack-solution/
 ├── .gitignore
 └── README.md                 # Что делаем и как запустить
 ```
+
+Схема БД, правила импорта данных и проверка миграции: [docs/database.md](docs/database.md).

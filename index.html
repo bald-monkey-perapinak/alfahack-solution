@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Бизнес-требования · AI-инсайты для крупного бизнеса</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  color-scheme:light;
+  --bg:#f4fcfd;
+  --panel:#e8fbfd;
+  --line:#38bfd0;
+  --cyan:#06b6d4;
+  --cyan-bright:#22d3ee;
+  --cyan2:#0891a7;
+  --cyan3:#075c69;
+  --text:#10272d;
+  --muted:#4d6870;
+  --glass:rgba(255,255,255,.72);
+  --border:rgba(6,182,212,.22);
+  --shadow-sm:0 1px 2px rgba(7,92,105,.06),0 4px 14px rgba(6,182,212,.08);
+  --shadow-md:0 2px 4px rgba(7,92,105,.05),0 14px 36px rgba(6,182,212,.16);
+  --shadow-lg:0 4px 8px rgba(7,92,105,.06),0 24px 56px rgba(6,182,212,.26);
+  --grad:linear-gradient(135deg,#67e8f9 0%,#22d3ee 45%,#06b6d4 100%);
+  --radius:22px;
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0;background:var(--bg);color:var(--text);font-family:Manrope,Inter,"SF Pro Display",system-ui,-apple-system,"Segoe UI",Arial,sans-serif;-webkit-font-smoothing:antialiased}
+body{overflow:hidden}
+button,input{font:inherit}
+button{cursor:pointer}
+.app{height:100%;display:flex;flex-direction:column;background:
+  radial-gradient(900px 500px at 8% -10%,rgba(34,211,238,.20),transparent 60%),
+  radial-gradient(800px 520px at 100% 0%,rgba(103,232,249,.22),transparent 60%),
+  radial-gradient(700px 500px at 55% 110%,rgba(6,182,212,.12),transparent 60%),
+  var(--bg)}
+.topbar{z-index:10;min-height:72px;display:flex;align-items:center;gap:16px;padding:12px 24px;border-bottom:1px solid var(--border);background:var(--glass);backdrop-filter:blur(18px) saturate(1.4);-webkit-backdrop-filter:blur(18px) saturate(1.4)}
+.brand{display:flex;align-items:center;gap:12px;min-width:290px}
+.brand-mark{width:42px;height:42px;border-radius:14px;display:grid;place-items:center;background:var(--grad);border:1px solid rgba(255,255,255,.6);color:#06424d;font-size:21px;font-weight:800;box-shadow:0 8px 20px rgba(6,182,212,.40),inset 0 1px 0 rgba(255,255,255,.7)}
+.brand-title{font-size:13px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:#10272d}
+.brand-sub{font-size:10.5px;color:#587078;margin-top:4px;letter-spacing:.08em}
+.top-title{border-left:1px solid var(--border);padding-left:18px;min-width:220px;flex:1}
+.top-title strong{display:block;font-size:15px;font-weight:800;letter-spacing:-.02em;color:#10272d}
+.top-title span{font-size:11.5px;color:#587078;display:block;margin-top:4px}
+.toolbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+.tool-btn{border:1px solid var(--border);color:#13515c;background:rgba(255,255,255,.85);border-radius:999px;padding:8px 14px;font-size:12px;font-weight:700;box-shadow:var(--shadow-sm);transition:transform .18s ease,box-shadow .18s ease,border-color .18s ease,background .18s ease;white-space:nowrap}
+.tool-btn:hover{border-color:var(--cyan);color:var(--cyan3);background:#fff;transform:translateY(-1px);box-shadow:var(--shadow-md)}
+.tool-btn:active{transform:translateY(0) scale(.97)}
+.tool-btn.primary{border-color:rgba(255,255,255,.55);background:var(--grad);color:#05414c;box-shadow:0 8px 20px rgba(6,182,212,.38),inset 0 1px 0 rgba(255,255,255,.6)}
+.tool-btn.primary:hover{box-shadow:0 12px 28px rgba(6,182,212,.5),inset 0 1px 0 rgba(255,255,255,.6)}
+.tool-btn.icon{width:36px;height:36px;padding:0;text-align:center;font-size:16px;display:grid;place-items:center}
+.search{width:180px;max-width:24vw;background:rgba(255,255,255,.9);color:#10272d;border:1px solid var(--border);border-radius:999px;padding:9px 15px;outline:none;font-size:12px;box-shadow:var(--shadow-sm);transition:box-shadow .18s,border-color .18s,width .25s}
+.search:focus{border-color:var(--cyan);box-shadow:0 0 0 4px rgba(34,211,238,.25);width:220px}
+.search::placeholder{color:#718b91}
+.legendbar{z-index:5;display:flex;align-items:center;gap:10px;padding:10px 24px;border-bottom:1px solid rgba(6,182,212,.12);background:transparent;font-size:10px;color:#4d6870;letter-spacing:.06em}
+.legend-item{display:flex;align-items:center;gap:8px;white-space:nowrap;padding:5px 11px;border-radius:999px;background:rgba(255,255,255,.7);border:1px solid rgba(6,182,212,.16)}
+.legend-dot{width:9px;height:9px;border-radius:50%;background:var(--grad);border:0;box-shadow:0 0 0 3px rgba(34,211,238,.2)}
+.legend-dot.outline{background:#fff;border:2px solid #06b6d4;box-shadow:none}
+.legend-dot.dim{background:#b8eef3;border:1px solid #79d5e0;box-shadow:none}
+.legend-line{width:24px;height:2px;border-radius:2px;background:#06b6d4;position:relative}
+.legend-line:after{content:"";position:absolute;right:-1px;top:-3px;border-left:5px solid #06b6d4;border-top:4px solid transparent;border-bottom:4px solid transparent}
+.board-shell{position:relative;flex:1;min-height:0;overflow:hidden}
+#viewport{position:absolute;inset:0;overflow:hidden;cursor:grab;touch-action:none;background-image:radial-gradient(rgba(6,182,212,.28) 1.2px,transparent 1.4px);background-size:28px 28px}
+#viewport.panning{cursor:grabbing}
+#world{position:absolute;left:0;top:0;width:2660px;height:1370px;transform-origin:0 0;will-change:transform}
+#connections{position:absolute;inset:0;width:2660px;height:1370px;overflow:visible;pointer-events:none;z-index:1}
+.connection{fill:none;stroke:#06b6d4;stroke-width:1.8;stroke-opacity:.8;stroke-linecap:round;vector-effect:non-scaling-stroke;filter:drop-shadow(0 2px 4px rgba(6,182,212,.35))}
+.connection.secondary{stroke:#54bfce;stroke-opacity:.85;stroke-dasharray:6 5}
+.connection-label{font-size:11px;font-weight:600;fill:#08798b;paint-order:stroke;stroke:#f4fcfd;stroke-width:6px;stroke-linejoin:round;opacity:1}
+.zone-label{position:absolute;display:flex;align-items:center;gap:8px;color:#087f91;font-size:10.5px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;pointer-events:none}
+.zone-label:before{content:"";width:8px;height:8px;border-radius:50%;background:var(--grad);box-shadow:0 0 0 4px rgba(34,211,238,.22)}
+.zone-line{position:absolute;height:2px;border-radius:2px;background:linear-gradient(90deg,rgba(6,182,212,.45),rgba(6,182,212,0));pointer-events:none}
+.node{position:absolute;z-index:2;width:390px;background:rgba(255,255,255,.82);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow-md);transition:border-color .2s,opacity .2s,box-shadow .25s,transform .25s}
+.node:hover{border-color:rgba(6,182,212,.6);box-shadow:var(--shadow-lg)}
+.node.active{border-color:#06b6d4;box-shadow:var(--shadow-lg),0 0 0 4px rgba(34,211,238,.28)}
+.node.dimmed{opacity:.2}
+.node-header{display:flex;gap:12px;align-items:flex-start;padding:16px 16px 13px;background:linear-gradient(135deg,rgba(103,232,249,.55) 0%,rgba(34,211,238,.28) 55%,rgba(232,251,253,.6) 100%);border-bottom:1px solid rgba(6,182,212,.18);cursor:grab;user-select:none}
+.node-header:active{cursor:grabbing}
+.node-number{flex:0 0 32px;height:32px;display:grid;place-items:center;border:1px solid rgba(255,255,255,.7);border-radius:11px;color:#054553;background:var(--grad);font-size:11px;font-weight:850;box-shadow:0 6px 14px rgba(6,182,212,.35),inset 0 1px 0 rgba(255,255,255,.7)}
+.node-heading{flex:1;min-width:0}
+.node-title{font-size:14.5px;line-height:1.25;font-weight:800;letter-spacing:-.02em;color:#082f38}
+.node-kicker{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:8px}
+.tag{display:inline-flex;align-items:center;padding:4px 9px;border:1px solid rgba(8,145,167,.28);border-radius:999px;font-size:9px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;color:#104e59;background:rgba(255,255,255,.7)}
+.tag.must{border-color:transparent;color:#05414c;background:var(--grad);box-shadow:0 3px 8px rgba(6,182,212,.3)}
+.tag.open{border-color:rgba(74,171,184,.45);color:#245d67;background:rgba(232,251,253,.9)}
+.tag.risk{border-color:rgba(74,171,184,.45);color:#245d67;background:rgba(232,251,253,.9)}
+.toggle{flex:0 0 30px;width:30px;height:30px;border:1px solid rgba(8,127,145,.35);border-radius:50%;background:#fff;color:#075c69;font-size:17px;line-height:1;display:grid;place-items:center;box-shadow:var(--shadow-sm);transition:transform .2s,background .2s,box-shadow .2s}
+.toggle:hover{background:#d9f8fb;border-color:#075c69;transform:scale(1.08)}
+.node-summary{font-size:12px;line-height:1.6;color:#29474f;padding:15px 18px 17px}
+.summary-lead{color:#102f37;font-weight:750;display:block;margin-bottom:9px;font-size:12.5px}
+.summary-points{list-style:none;display:grid;gap:7px;margin:0;padding:0}
+.summary-points li{display:flex;gap:10px;align-items:flex-start}
+.summary-points li:before{content:"";width:7px;height:7px;margin-top:6px;border-radius:50%;background:var(--grad);flex:0 0 7px;box-shadow:0 0 0 3px rgba(34,211,238,.18)}
+.node-details{display:none;padding:0 18px 17px;border-top:1px dashed rgba(6,182,212,.35);max-height:350px;overflow:auto;scrollbar-width:thin;scrollbar-color:#70cfda transparent}
+.node.expanded .node-details{display:block}
+.node.expanded .toggle{background:var(--cyan3);color:#fff;border-color:var(--cyan3)}
+.node.expanded .node-summary{padding-bottom:14px}
+.detail-section{margin-top:15px}
+.detail-section h4{font-size:10px;color:#087f91;text-transform:uppercase;letter-spacing:.12em;margin:0 0 8px;font-weight:850}
+.detail-section p{font-size:11px;line-height:1.6;color:#29474f;margin:5px 0}
+.detail-section ul,.detail-section ol{margin:0;padding-left:18px;color:#29474f;font-size:11px;line-height:1.6}
+.detail-section li{margin:4px 0}
+.detail-section li::marker{color:#06b6d4}
+.detail-section strong{color:#102f37;font-weight:750}
+.detail-section .muted{color:#587078}
+.mini-table{border-collapse:separate;border-spacing:0;width:100%;font-size:10px;line-height:1.5;margin-top:6px;border:1px solid rgba(6,182,212,.22);border-radius:12px;overflow:hidden;background:rgba(255,255,255,.7)}
+.mini-table th{text-align:left;color:#08798b;font-weight:800;padding:8px 8px;background:rgba(34,211,238,.14);border-bottom:1px solid rgba(6,182,212,.25);vertical-align:top;letter-spacing:.03em}
+.mini-table td{padding:7px 8px;border-bottom:1px solid rgba(6,182,212,.12);color:#29474f;vertical-align:top}
+.mini-table tr:last-child td{border-bottom:0}
+.mini-table tr:hover td{background:rgba(34,211,238,.07)}
+.pill-row{display:flex;flex-wrap:wrap;gap:6px;margin-top:9px}
+.pill{font-size:10px;line-height:1.2;padding:6px 10px;border:1px solid rgba(6,182,212,.28);border-radius:999px;color:#245d67;background:rgba(216,247,250,.8)}
+.pill strong{color:#075c69}
+.callout{border:1px solid rgba(6,182,212,.25);border-left:3px solid #06b6d4;padding:10px 12px;background:linear-gradient(135deg,rgba(34,211,238,.16),rgba(232,251,253,.7));border-radius:4px 14px 14px 4px;font-size:11px;line-height:1.55;color:#214851;margin-top:10px}
+.callout.warn{border-left-color:#58b9c7;background:linear-gradient(135deg,rgba(224,247,249,.95),rgba(255,255,255,.7))}
+.footbar{height:34px;flex:0 0 34px;display:flex;align-items:center;justify-content:space-between;padding:0 24px;border-top:1px solid var(--border);background:var(--glass);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);color:#587078;font-size:10px;letter-spacing:.04em}
+.status{display:flex;align-items:center;gap:8px}
+.status-dot{width:8px;height:8px;border-radius:50%;background:#06b6d4;box-shadow:0 0 0 0 rgba(6,182,212,.6);animation:pulse 2.2s infinite}
+@keyframes pulse{70%{box-shadow:0 0 0 7px rgba(6,182,212,0)}100%{box-shadow:0 0 0 0 rgba(6,182,212,0)}}
+.hint{position:absolute;right:16px;bottom:16px;z-index:4;padding:10px 14px;background:var(--glass);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border:1px solid var(--border);border-radius:16px;color:#4d6870;font-size:10px;box-shadow:var(--shadow-md);pointer-events:none}
+.hint b{color:#075c69}
+.no-results{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);color:#29474f;background:var(--glass);backdrop-filter:blur(14px);border:1px solid var(--border);border-radius:18px;padding:18px 26px;display:none;z-index:8;box-shadow:var(--shadow-lg)}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+@media(max-width:900px){.topbar{padding:10px 12px;gap:8px;flex-wrap:wrap}.brand{min-width:unset}.top-title{order:3;flex-basis:100%;border-left:0;border-top:1px solid var(--border);padding:8px 0 0}.toolbar{margin-left:auto}.search{width:120px}.search:focus{width:150px}.legendbar{overflow:auto;padding:8px 12px}.hint{display:none}}
+@media print{@page{size:landscape;margin:8mm}html,body{height:auto;overflow:visible}.app{height:auto;background:#fff}.topbar,.legendbar,.footbar,.hint{display:none}#viewport{position:relative;overflow:visible;height:auto;background:#fff}#world{transform:none!important;position:relative}.node{break-inside:avoid;backdrop-filter:none;box-shadow:none}.node-details{display:block!important;max-height:none;overflow:visible}.toggle{display:none}}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="topbar">
+    <div class="brand">
+      <div class="brand-mark">↗</div>
+      <div><div class="brand-title">Business design board</div><div class="brand-sub">DISCOVERY · REQUIREMENTS · DELIVERY</div></div>
+    </div>
+    <div class="top-title"><strong>AI-инсайты для крупного бизнеса</strong><span>Единая карта проблемы, требований, агентного процесса и критериев успеха</span></div>
+    <div class="toolbar">
+      <input id="search" class="search" type="search" placeholder="Найти на доске…" aria-label="Поиск по доске" />
+      <button class="tool-btn icon" id="zoomOut" title="Уменьшить масштаб">−</button>
+      <button class="tool-btn icon" id="zoomIn" title="Увеличить масштаб">+</button>
+      <button class="tool-btn" id="fit">Вся схема</button>
+      <button class="tool-btn" id="collapseAll">Свернуть</button>
+      <button class="tool-btn primary" id="expandAll">Раскрыть блоки</button>
+    </div>
+  </header>
+  <div class="legendbar">
+    <div class="legend-item"><span class="legend-dot"></span> ОСНОВНОЙ ПОТОК</div>
+    <div class="legend-item"><span class="legend-line"></span> СВЯЗЬ / ЗАВИСИМОСТЬ</div>
+    <div class="legend-item"><span class="legend-dot outline"></span> MUST / КРИТИЧЕСКОЕ</div>
+    <div class="legend-item"><span class="legend-dot dim"></span> ГИПОТЕЗА / РЕШЕНИЕ ТРЕБУЕТ УТОЧНЕНИЯ</div>
+    <div style="margin-left:auto;color:#5f8791;white-space:nowrap">Белый фон · Cyan nodes</div>
+  </div>
+  <main class="board-shell">
+    <div id="viewport" aria-label="Интерактивная доска проектирования">
+      <div id="world">
+        <div class="zone-label" style="left:60px;top:24px">01 / ПРОБЛЕМА И ЦЕННОСТЬ</div>
+        <div class="zone-line" style="left:60px;top:45px;width:830px"></div>
+        <div class="zone-label" style="left:960px;top:24px">02 / ДАННЫЕ И ИНТЕЛЛЕКТУАЛЬНЫЙ КОНТУР</div>
+        <div class="zone-line" style="left:960px;top:45px;width:1210px"></div>
+        <div class="zone-label" style="left:2240px;top:24px">03 / РЕЗУЛЬТАТ</div>
+        <div class="zone-line" style="left:2240px;top:45px;width:360px"></div>
+        <div class="zone-label" style="left:60px;top:552px">04 / ДЕКОМПОЗИЦИЯ И КОНТРОЛЬ</div>
+        <div class="zone-line" style="left:60px;top:573px;width:2540px"></div>
+        <svg id="connections" viewBox="0 0 2660 1370" aria-hidden="true">
+          <defs><marker id="arrowhead" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L8,4.5 L0,9 z" fill="#22d3ee"/></marker></defs>
+        </svg>
+
+        <article class="node" id="problem" data-search="проблема симптомы корневые причины cost inaction задержка фильтрация доверие" style="left:60px;top:70px;width:400px">
+          <header class="node-header"><div class="node-number">01</div><div class="node-heading"><div class="node-title">Problem statement</div><div class="node-kicker"><span class="tag">ПРОБЛЕМА</span><span class="tag open">DISCOVERY</span></div></div><button class="toggle" aria-label="Раскрыть детали">+</button></header>
+          <div class="node-summary"><span class="summary-lead">ЛПР получает новости, но не ответ на вопрос «что это значит для моей компании?»</span><ul class="summary-points"><li>30–60 минут в день на фильтрацию новостей.</li><li>События не связаны с профилем компании и решениями.</li><li>Нет проверяемой цепочки от факта к действию.</li></ul></div>
+          <div class="node-details">
+            <section class="detail-section"><h4>Симптомы</h4><ul><li>Сотни новостей из десятков источников; руководитель читает заголовки вручную.</li><li>Аналитика банка не доходит до ЛПР в момент события и не адаптирована под роль.</li><li>Решения откладываются или принимаются без учёта внешнего фактора.</li><li>Пользователь не видит оснований вывода и не может защитить его перед коллегами.</li></ul></section>
+            <section class="detail-section"><h4>Корневые причины</h4><ol><li><strong>Событие → компания:</strong> нет надёжного сопоставления новости с признаками клиента.</li><li><strong>Аналитика → момент решения:</strong> экспертиза ЦМИ не встроена в контекст события.</li><li><strong>Понимание → действие:</strong> нет следующего шага под роль пользователя.</li><li><strong>Дефицит доверия:</strong> смешаны факты, экспертная позиция и AI-вывод.</li></ol></section>
+            <section class="detail-section"><h4>Цена бездействия</h4><p><strong>Клиент:</strong> задержка решений, упущенная выгода, рост рисков.</p><p><strong>Банк:</strong> снижение дифференциации и удержания крупных клиентов, нереализованный потенциал кросс-продаж.</p></section>
+            <div class="callout">Гипотеза: персонализированный инсайт с обоснованием и релевантным действием сокращает путь от события до обоснованного решения.</div>
+          </div>
+        </article>
+
+        <article class="node" id="goals" data-search="цели бизнес продукт пользователь ai NSM retention cross sell LTV CAC TTFV" style="left:510px;top:70px;width:390px">
+          <header class="node-header"><div class="node-number">02</div><div class="node-heading"><div class="node-title">Ценность и бизнес-цели</div><div class="node-kicker"><span class="tag must">OUTCOME</span><span class="tag open">ГИПОТЕЗА ROI</span></div></div><button class="toggle" aria-label="Раскрыть детали">+</button></header>
+          <div class="node-summary"><span class="summary-lead">Из события — в подтверждённое действие</span><ul class="summary-points"><li>Банк: удержание и кросс-продажи.</li><li>Пользователь: понять влияние и следующий шаг за ≤60 сек.</li><li>NSM: подтверждённые циклы «инсайт → действие» / активный пользователь / неделю.</li></ul></div>
+          <div class="node-details">
+            <section class="detail-section"><h4>Иерархия целей</h4><table class="mini-table"><tr><th>Уровень</th><th>Цель / метрика</th></tr><tr><td>Банк</td><td>Retention, Cross-sell Revenue, LTV/CAC</td></tr><tr><td>Продукт</td><td>TTFV, Insight-to-Action Rate</td></tr><tr><td>Пользователь</td><td>Resonance Rate, NPS; понять влияние за ≤60 сек</td></tr><tr><td>AI</td><td>Hallucination Rate, Traceability, Precision@5</td></tr></table></section>
+            <section class="detail-section"><h4>North Star Metric</h4><p><strong>NSM:</strong> число подтверждённых циклов «инсайт → действие» на активного пользователя в неделю. Дизайн-цель пилота — ≥0,3.</p><ul><li>Считается: заявка с контекстом инсайда; переход к менеджеру с прикреплённым инсайдом; отметка «сделал».</li><li>Не считается: просмотр подробностей или клик по кнопке без действия.</li></ul></section>
+            <section class="detail-section"><h4>Бизнес-кейс — пока гипотеза</h4><ul><li>Затраты: команда, инфраструктура, токены (в исходнике — 500 ₽/день на хакатон), поддержка.</li><li>Эффект: рост кросс-продаж на X%, снижение оттока на Y%, рост LTV.</li><li>ROI: окупаемость за N месяцев при допущении Z.</li></ul><div class="callout warn">X, Y, Z и срок окупаемости не заданы — это параметры для расчёта, а не подтверждённые результаты.</div></section>
+          </div>
+        </article>
+
+        <article class="node" id="personas" data-search="персоны stakeholders CFO CEO казначей главбух ЦМИ AI комплаенс ИБ RACI" style="left:950px;top:70px;width:370px">
+          <header class="node-header"><div class="node-number">03</div><div class="node-heading"><div class="node-title">Пользователи и стейкхолдеры</div><div class="node-kicker"><span class="tag">РОЛИ</span><span class="tag open">DMU / RACI</span></div></div><button class="toggle" aria-label="Раскрыть детали">+</button></header>
+          <div class="node-summary"><span class="summary-lead">Одна компания — несколько ЛПР с разными задачами</span><ul class="summary-points"><li>CFO — ставка и кредитный портфель.</li><li>Казначей — платежи и кассовый разрыв.</li><li>CEO — стратегия; главбух — регулирование и сроки.</li></ul></div>
+          <div class="node-details">
+            <section class="detail-section"><h4>Ключевые роли</h4><table class="mini-table"><tr><th>Роль</th><th>Job to be done</th></tr><tr><td>CFO</td><td>Оценить влияние ставки на плавающий кредитный портфель и решить, фиксировать ли ставку.</td></tr><tr><td>Казначей</td><td>Увидеть риск кассового разрыва при изменении платежей контрагентов.</td></tr><tr><td>CEO</td><td>Понять стратегическое влияние отраслевого события.</td></tr><tr><td>Главбух</td><td>Увидеть изменения регулирования, документы и сроки.</td></tr></table></section>
+            <section class="detail-section"><h4>Стейкхолдеры</h4><ul><li><strong>Инициатор:</strong> владелец продукта. <strong>Одобряет:</strong> руководитель цифрового блока.</li><li><strong>Пользуется:</strong> ЛПР крупного бизнеса. <strong>Блокируют:</strong> комплаенс, юридический отдел, ИБ.</li><li><strong>Эксперты:</strong> аналитики ЦМИ и AI-команда. <strong>Канал:</strong> менеджеры по продажам (RM).</li></ul></section>
+            <section class="detail-section"><h4>Конфликты интересов</h4><ul><li>Скорость vs трассируемость → уровни уверенности + drill-down.</li><li>Кросс-продажи vs нейтральность → маркировка «продукт банка» / «AI-вывод».</li><li>Инновации vs регуляторика → дисклеймеры и контроль контента.</li></ul></section>
+          </div>
+        </article>
+
+        <article class="node" id="data" data-search="данные источники компания новости аналитика банка ЦМИ платежи контрагенты GROUP_ID PII RBAC" style="left:1370px;top:70px;width:390px">
+          <header class="node-header"><div class="node-number">04</div><div class="node-heading"><div class="node-title">Источники и модель данных</div><div class="node-kicker"><span class="tag must">DATA</span><span class="tag">GOVERNANCE</span></div></div><button class="toggle" aria-label="Раскрыть детали">+</button></header>
+          <div class="node-summary"><span class="summary-lead">Три контекста сводятся в единую доказательную базу</span><ul class="summary-points"><li>Профиль компании, группа и связи.</li><li>Внешние новости + аналитика ЦМИ.</li><li>Качество, свежесть, дедупликация и права доступа.</li></ul></div>
+          <div class="node-details">
+            <section class="detail-section"><h4>Что поступает</h4><ul><li><strong>Компания:</strong> отрасль / ОКВЭД, выручка, штат, возраст, регион, продукты банка, негативные маркеры, GROUP_ID.</li><li><strong>Связи:</strong> физлица ↔ компании, плательщик / получатель, сумма и частота платежей.</li><li><strong>Новости:</strong> что, где, когда, масштаб, участники, отрасль, источник, достоверность, тональность.</li><li><strong>Аналитика ЦМИ:</strong> ID, название, дата, автор, цитата, ссылка.</li><li><strong>Роль пользователя:</strong> отрасль, иерархия, продукт, участие в решениях, горизонт, толерантность к риску, права доступа.</li></ul></section>
+            <section class="detail-section"><h4>Бизнес-правила данных</h4><ul><li>Полнота ≥80% полей для инсайта; актуальность ≤24 ч.</li><li>Пропуски ключевых полей → низкая уверенность или отказ от инсайта.</li><li>Приоритет источников в исходнике: аналитика банка → официальные источники → СМИ.</li><li>Дедупликация по заголовку + источнику; отдельно в требованиях — заголовок + источник + дата.</li><li>Entity resolution: GROUP_ID, связи по физлицам и платежам.</li><li>PII-маскирование, RBAC, аудит доступа; хранение: инсайты 12 месяцев, логи 3 месяца.</li></ul></section>
+            <div class="callout">В хакатоне: синтетические данные, 10 профилей, 3 отрасли и edge cases (нет данных / противоречия).</div>
+          </div>
+        </article>
+
+        <article class="node" id="agent" data-search="агент процесс архитектура парсер RAG tools planning self-check JSON SLA fallback LLM" style="left:1810px;top:70px;width:390px">
+          <header class="node-header"><div class="node-number">05</div><div class="node-heading"><div class="node-title">Декомпозиция агентного процесса</div><div class="node-kicker"><span class="tag must">CORE FLOW</span><span class="tag">MULTI-STEP</span></div></div><button class="toggle" aria-label="Раскрыть детали">+</button></header>
+          <div class="node-summary"><span class="summary-lead">Не один промпт, а управляемая цепочка шагов с инструментами и самопроверкой</span><ul class="summary-points"><li>Сбор → нормализация → сопоставление.</li><li>План агента → инструменты / RAG → проверка.</li><li>Генерация → ранжирование → доставка → обратная связь.</li></ul></div>
+          <div class="node-details">
+            <section class="detail-section"><h4>To-Be поток</h4><ol><li>Событие попадает в систему.</li><li>Парсер нормализует материал, классифицирует тему и удаляет дубликаты.</li><li>Агент сопоставляет событие с признаками компании и аналитикой банка.</li><li>Агент планирует шаги, вызывает доступные инструменты, держит единый контекст.</li><li>Проверяет полноту / противоречия; при необходимости ищет повторно или снижает уверенность.</li><li>Формирует инсайт в структурированном JSON с источниками и разделением типов контента.</li><li>Ранжирует по релевантности × материальности × срочности.</li><li>Доставляет в интернет-банк / push, пишет audit-log; собирает обратную связь.</li></ol></section>
+            <section class="detail-section"><h4>Исключения и SLA</h4><table class="mini-table"><tr><th>Ситуация</th><th>Обработка</th></tr><tr><td>Нет данных о компании</td><td>Низкая уверенность или запрос уточнения.</td></tr><tr><td>Источники спорят</td><td>Несколько источников + уровень уверенности.</td></tr><tr><td>Аналитика устарела</td><td>Маркировка и предложение обновить.</td></tr><tr><td>Пользователь не согласен</td><td>Feedback и пересмотр ранжирования.</td></tr><tr><td>Ошибка LLM</td><td>Fallback, логирование, alert.</td></tr></table><div class="pill-row"><span class="pill">Парсинг <strong>≤5 мин</strong></span><span class="pill">Генерация <strong>≤30 сек</strong></span><span class="pill">Доставка <strong>≤1 мин</strong></span></div></section>
+            <section class="detail-section"><h4>Триггеры</h4><p>По событию · по расписанию (утренняя сводка) · по запросу.</p></section>
+            <section class="detail-section"><h4>Ограничения реализации</h4><p>Разрешённые в исходном кейсе модели: Gemma 4 26B A4B, GLM-5.3-Flash, Qwen3.6 35B A3B, DeepSeek-V4.1-Flash, Qwen3-VL-30B-A3B-Instruct, Kimi-K2.6. Внешние AI-сервисы и готовые мультиагентные системы как основной компонент запрещены; лимит токенов — 500 ₽/день.</p></section>
+          </div>
+        </article>
+
+        <article class="node" id="insight" data-search="инсайт результат факт аналитика AI вывод уверенность источники действие цена вопроса дисклеймер" style="left:2250px;top:70px;width:350px">
+          <header class="node-header"><div class="node-number">06</div><div class="node-heading"><div class="node-title">Контракт инсайта</div><div class="node-kicker"><span class="tag must">OUTPUT</span><span class="tag">TRACEABLE</span></div></div><button class="toggle" aria-label="Раскрыть детали">+</button></header>
+          <div class="node-summary"><span class="summary-lead">Не пересказ новости, а объяснимое следствие для конкретной компании</span><ul class="summary-points"><li>Факт / аналитика банка / AI-вывод — раздельно.</li><li>Релевантность, риск или возможность, горизонт и уверенность.</li><li>Источники и следующий шаг обязательны.</li></ul></div>
+          <div class="node-details">
+            <section class="detail-section"><h4>Шесть вопросов к результату</h4><ol><li>Что произошло — факт, участники и сроки.</li><li>Почему это касается именно этой компании — отрасль, финансы, контрагенты, регионы.</li><li>Какие последствия возможны — риски, возможности, факторы влияния.</li><li>Какие действия релевантны — конкретные варианты и вопросы для анализа.</li><li>Как это оценивает банк — заметная экспертная позиция ЦМИ.</li><li>На чём основан вывод — клиентские признаки, новости, аналитика.</li></ol></section>
+            <section class="detail-section"><h4>Обязательные поля</h4><div class="pill-row"><span class="pill">Заголовок-вывод</span><span class="pill">Тип контента</span><span class="pill">Связь с компанией</span><span class="pill">Риск / возможность</span><span class="pill">Горизонт</span><span class="pill">Уверенность</span><span class="pill">Цена вопроса</span><span class="pill">Источники</span><span class="pill">Действие</span><span class="pill">Disclaimer</span></div></section>
+            <section class="detail-section"><h4>Критерий пользы</h4><p>Релевантность · неочевидность · обоснованность · действенность · защитимость.</p><div class="callout">Тест персонализации: если убрать название компании, не должен сохраняться тот же смысл инсайта.</div></section>
+          </div>
+        </article>
+
+        <article class="node" id="requirements" data-search="требования FR-01 FR-02 FR-03 FR-04 FR-05 FR-06 FR-07 FR-08 FR-09 FR-10 NFR must should" style="left:60px;top:600px;width:400px">
+          <header class="node-header"><div class="node-number">07</div><div class="node-heading"><div class="node-title">Реестр бизнес-требований</div><div class="node-kicker"><span class="tag must">FR / NFR</span><span class="tag">ACCEPTANCE</span></div></div><button class="toggle" aria-label="Раскрыть детали">+</button></header>
+          <div class="node-summary"><span class="summary-lead">MUST: ядро ценности, прослеживаемость и безопасность</span><ul class="summary-points"><li>FR-01—10: сбор, классификация, матчинг, инсайт, действие, аудит, RBAC.</li><li>NFR-01: первый полезный инсайт ≤60 сек.</li><li>Полный список критериев приёмки раскрывается ниже.</li></ul></div>
+          <div class="node-details">
+            <section class="detail-section"><h4>Функциональные требования</h4><table class="mini-table"><tr><th>ID</th><th>Требование</th><th>Приоритет / критерий</th></tr><tr><td>FR-01</td><td>Собирать внешние новости</td><td>MUST · ≥N новостей/день, дедупликация</td></tr><tr><td>FR-02</td><td>Классифицировать по отраслям и типам</td><td>MUST · точность ≥85%</td></tr><tr><td>FR-03</td><td>Сопоставлять с признаками компании</td><td>MUST · Precision@5 ≥0,8</td></tr><tr><td>FR-04</td><td>Генерировать инсайт с 3 типами контента</td><td>MUST · маркировка 100%</td></tr><tr><td>FR-05</td><td>Предлагать действие с обоснованием</td><td>MUST · ≥90% инсайтов с действием</td></tr><tr><td>FR-06</td><td>Трассируемость инсайта</td><td>MUST · 100% с источниками</td></tr><tr><td>FR-07</td><td>Обратная связь</td><td>SHOULD · 👍/👎/🔕/«уже знал»</td></tr><tr><td>FR-08</td><td>Доставка уведомлений</td><td>SHOULD · 2 уровня push</td></tr><tr><td>FR-09</td><td>Логи шагов агента</td><td>MUST · шаг, инструмент, результат</td></tr><tr><td>FR-10</td><td>RBAC</td><td>MUST · 0 нарушений</td></tr></table></section>
+            <section class="detail-section"><h4>Нефункциональные требования</h4><table class="mini-table"><tr><th>ID</th><th>Требование</th><th>Приоритет</th></tr><tr><td>NFR-01</td><td>Время до первого инсайта ≤60 сек</td><td>MUST</td></tr><tr><td>NFR-02</td><td>Доступность ≥99%</td><td>SHOULD</td></tr><tr><td>NFR-03</td><td>Масштабирование на новые отрасли</td><td>SHOULD</td></tr><tr><td>NFR-04</td><td>Стоимость инсайта ≤X ₽</td><td>SHOULD</td></tr><tr><td>NFR-05</td><td>Traceability 100%</td><td>MUST</td></tr><tr><td>NFR-06</td><td>Fallback при ошибках</td><td>MUST</td></tr><tr><td>NFR-07</td><td>Disclaimer 100%</td><td>MUST</td></tr></table></section>
+            <section class="detail-section"><h4>Бизнес-правила</h4><ul><li>Порог материальности: влияние на выручку / риски ≥X% — значение не задано.</li><li>Ранжирование: релевантность × материальность × срочность.</li><li>Уверенность: высокая / средняя / низкая.</li><li>Маркировка: факт из источника / аналитика ЦМИ / AI-вывод.</li></ul></section>
+          </div>
+        </article>
+
+        <article class="node" id="journey" data-search="user journey путь пользователя уведомление scan drilldown верификация действие обратная связь share UX" style="left:510px;top:600px;width:390px">
+          <header class="node-header"><div class="node-number">08</div><div class="node-heading"><div class="node-title">UX: путь от события к действию</div><div class="node-kicker"><span class="tag">USER JOURNEY</span><span class="tag must">≤60 СЕК</span></div></div><button class="toggle" aria-label="Раскрыть детали">+</button></header>
+          <div class="node-summary"><span class="summary-lead">Пользователь хочет быстрый ответ, которому можно доверять и который можно защитить</span><ul class="summary-points"><li>«Требует внимания» + «На радаре».</li><li>Проверка «почему касается меня» и drill-down.</li><li>Варианты действий, исполнение, feedback.</li></ul></div>
+          <div class="node-details">
+            <section class="detail-section"><h4>Сквозной путь</h4><ol><li><strong>Триггер:</strong> push только если событие материально для компании; критичное отдельно, фон — в сводке.</li><li><strong>Ориентация:</strong> 1–3 инсайда «Требует внимания» + «На радаре»; честный пустой стейт, если критичного нет.</li><li><strong>Скан:</strong> заголовок = следствие для компании, а не просто новость; риск/возможность, горизонт, материальность, уверенность.</li><li><strong>Релевантность:</strong> видимый блок «Почему вас касается» с конкретным признаком компании.</li><li><strong>Drill-down:</strong> факт → связь с компанией → последствия → позиция банка → что делать → источники.</li><li><strong>Верификация:</strong> первоисточник, дата аналитики ЦМИ, признаки компании, уверенность.</li><li><strong>Решение:</strong> несколько вариантов с обоснованием, эффектом и ценой бездействия.</li><li><strong>Действие:</strong> заявка / переход к RM без потери контекста; подтверждение закрытия петли.</li><li><strong>Команда:</strong> поделиться резюме под роль получателя + источники.</li><li><strong>Обучение:</strong> 👍/👎/🔕/«уже знал», видимое влияние feedback на ранжирование.</li></ol></section>
+            <section class="detail-section"><h4>Что не делать</h4><ul><li>Не превращать сервис в новостную ленту или генератор советов без доказательств.</li><li>Не увеличивать вовлечение за счёт лишнего drill-down: глубина просмотра сама по себе не KPI.</li><li>Не отправлять критическое действие без контекста и источников.</li></ul></section>
+          </div>
+        </article>
+
+        <article class="node" id="metrics" data-search="метрики NSM guardrails hallucination precision traceability TTFV Cold Start Action Reachability pilot NPS" style="left:950px;top:600px;width:370px">
+          <header class="node-header"><div class="node-number">09</div><div class="node-heading"><div class="node-title">Метрики и критерии Go / No-Go</div><div class="node-kicker"><span class="tag must">GUARDRAILS</span><span class="tag open">ПРОКСИ / ПИЛОТ</span></div></div><button class="toggle" aria-label="Раскрыть детали">+</button></header>
+          <div class="node-summary"><span class="summary-lead">Разделяем безопасность, измеримое качество демо и гипотезы пилота</span><ul class="summary-points"><li>Guardrails: утечка PII / RBAC / injection = 0.</li><li>Хакатон-прокси: Hallucination ≤2%, Precision@5 ≥0,8, TTFV ≤60 сек.</li><li>Пилотные KPI не выдавать за измеренные результаты.</li></ul></div>
+          <div class="node-details">
+            <section class="detail-section"><h4>Guardrails — обязательные пороги</h4><table class="mini-table"><tr><th>Метрика</th><th>Порог</th></tr><tr><td>PII leakage / RBAC violations / prompt injection success</td><td>0</td></tr><tr><td>Disclaimer presence</td><td>100%</td></tr><tr><td>Source traceability</td><td>≥95% в критериях пилота; в FR-06/OKR указан 100%</td></tr></table></section>
+            <section class="detail-section"><h4>Проверяемые прокси качества</h4><table class="mini-table"><tr><th>Метрика</th><th>Цель</th><th>Метод / замечание</th></tr><tr><td>Hallucination Rate</td><td>≤2%</td><td>Аудит 20–30 инсайтов против источников</td></tr><tr><td>Precision@5</td><td>≥0,8</td><td>50–100 пар «компания × новость», экспертная разметка</td></tr><tr><td>Truism Rate</td><td>≤10%</td><td>«Уже знал» среди оценённых</td></tr><tr><td>Alpha Expertise Relevance</td><td>≥70%</td><td>Релевантная цитата ЦМИ, экспертная оценка</td></tr><tr><td>TTFV</td><td>≤60 сек</td><td>Тест 3–5 пользователей</td></tr><tr><td>Cold Start Coverage</td><td>≥90%</td><td>5–10 синтетических новых профилей</td></tr><tr><td>Action Reachability</td><td>≥90%</td><td>Действие доступно за ≤2 клика</td></tr></table></section>
+            <section class="detail-section"><h4>Go / No-Go и kill criteria</h4><ul><li><strong>Go:</strong> guardrails = 0 нарушений, Hallucination ≤2%, Precision@5 ≥0,8, Traceability ≥95%, TTFV ≤60 сек.</li><li><strong>No-Go:</strong> любое нарушение guardrails, Hallucination &gt;5%, Precision@5 &lt;0,6.</li><li><strong>Kill:</strong> после 3 итераций Hallucination &gt;5% или Precision@5 &lt;0,6 — пересмотр архитектуры; «уже знал» &gt;30% — пересмотр интерпретации.</li></ul></section>
+            <section class="detail-section"><h4>Цели пилота — не результаты хакатона</h4><p>IAR ≥8%; Next Best Action CTR ≥30%; Product Conversion ≥5%; Post-Action Loop Closure ≥80%; Company Relevance ≥80%; Retention ≥85% за 12 мес.; NPS ≥40; LTV/CAC ≥3. Это дизайн-цели и гипотезы post-launch.</p></section>
+            <div class="callout warn">В исходнике разные уровни порога Traceability (≥95% / 100%). Это нужно явно утвердить, не смешивая в отчётности.</div>
+          </div>
+        </article>
+
+        <article class="node" id="risks" data-search="риски R-01 галлюцинации PII prompt injection regulatory bias fallback assumptions допущения" style="left:1370px;top:600px;width:390px">
+          <header class="node-header"><div class="node-number">10</div><div class="node-heading"><div class="node-title">Риски, guardrails и допущения</div><div class="node-kicker"><span class="tag risk">RISK REGISTER</span><span class="tag must">CONTROL</span></div></div><button class="toggle" aria-label="Раскрыть детали">+</button></header>
+          <div class="node-summary"><span class="summary-lead">Доверие — часть продукта, а не постфактум-проверка</span><ul class="summary-points"><li>Галлюцинации, ложная персонализация, утечка PII.</li><li>Prompt injection, регуляторика, зависимость от LLM.</li><li>Порог уверенности, трассируемость, RBAC, аудит и fallback.</li></ul></div>
+          <div class="node-details">
+            <section class="detail-section"><h4>Реестр рисков</h4><table class="mini-table"><tr><th>ID / риск</th><th>Вероятность · влияние</th><th>Митигация</th></tr><tr><td>R-01 Галлюцинации LLM</td><td>Средняя · высокое</td><td>Трассируемость, порог уверенности, аудит.</td></tr><tr><td>R-02 Ложная персонализация</td><td>Средняя · среднее</td><td>Показ признаков компании, feedback.</td></tr><tr><td>R-03 Трюизмы</td><td>Высокая · среднее</td><td>«Уже знал», улучшение интерпретации.</td></tr><tr><td>R-04 Утечка PII</td><td>Низкая · критическое</td><td>RBAC, маскирование, red-team.</td></tr><tr><td>R-05 Prompt injection</td><td>Средняя · высокое</td><td>Фильтры, red-team, ограничение инструментов.</td></tr><tr><td>R-06 Регуляторный риск</td><td>Средняя · высокое</td><td>Disclaimer, юридическая экспертиза; не инвестрекомендация.</td></tr><tr><td>R-07 Зависимость от LLM</td><td>Средняя · среднее</td><td>Абстракция провайдера, fallback.</td></tr><tr><td>R-08 Репутационный риск</td><td>Низкая · высокое</td><td>Аудит, пилот, контроль качества.</td></tr><tr><td>R-09 Недоступность</td><td>Низкая · среднее</td><td>Мониторинг, SLA.</td></tr><tr><td>R-10 Bias</td><td>Средняя · среднее</td><td>Аудит выборки, разнообразие источников.</td></tr></table></section>
+            <section class="detail-section"><h4>Допущения для проверки</h4><ul><li>A-01: данные компании достаточно полны → анализ полноты.</li><li>A-02: аналитика ЦМИ актуальна → дата и релевантность.</li><li>A-03: пользователь доверяет AI при трассируемости → юзабилити-тест.</li><li>A-04: лимит токенов достаточен → расчёт бюджета.</li></ul></section>
+          </div>
+        </article>
+
+        <article class="node" id="pilot" data-search="пилот 10 клиентов 4 недели этапы внедрение поддержка deliverables docker readme github мониторинг откат" style="left:1810px;top:600px;width:390px">
+          <header class="node-header"><div class="node-number">11</div><div class="node-heading"><div class="node-title">Пилот, внедрение и поставка</div><div class="node-kicker"><span class="tag">DELIVERY</span><span class="tag open">ПЛАН</span></div></div><button class="toggle" aria-label="Раскрыть детали">+</button></header>
+          <div class="node-summary"><span class="summary-lead">Проверить сквозную ценность на ограниченной группе клиентов</span><ul class="summary-points"><li>10 клиентов · 4 недели · контрольная группа.</li><li>Подготовка 2 нед. → пилот 4 нед. → оценка 1 нед.</li><li>Мониторинг качества, обратной связи и действий.</li></ul></div>
+          <div class="node-details">
+            <section class="detail-section"><h4>План запуска</h4><ol><li>Подготовка — 2 недели.</li><li>Пилот — 4 недели, 10 клиентов, контрольная группа.</li><li>Оценка — 1 неделя по NSM, guardrails и прокси качества.</li><li>Масштабирование — только после проверки критериев Go.</li></ol></section>
+            <section class="detail-section"><h4>Операционная модель</h4><ul><li>Поддержка: L1 — поддержка, L2 — продукт, L3 — AI-команда.</li><li>Обучение: воркшоп для менеджеров, гайд для клиентов.</li><li>Мониторинг: дашборд NSM, guardrails, прокси-метрик.</li><li>Feedback → анализ → ранжирование → отчёт пользователю.</li><li>Откат к предыдущей версии при Hallucination &gt;5% или guardrails &gt;0.</li></ul></section>
+            <section class="detail-section"><h4>Deliverables</h4><ul><li>GitHub-репозиторий с историей коммитов и тегом дедлайна.</li><li>README: назначение, архитектура, окружение, запуск, конфиги, сценарий проверки.</li><li>Docker-конфигурация, lock-файлы, THIRD_PARTY_NOTICES.</li><li>Синтетические данные / тестовые аккаунты для E2E.</li><li>Серверный прототип с интерактивной лентой по профилю клиента.</li></ul></section>
+          </div>
+        </article>
+
+        <article class="node" id="openpoints" data-search="открытые вопросы пробелы X N стоимость материальность traceability thresholds conflicts ADR решения" style="left:2250px;top:600px;width:350px">
+          <header class="node-header"><div class="node-number">12</div><div class="node-heading"><div class="node-title">Открытые вопросы / решения</div><div class="node-kicker"><span class="tag open">OPEN ITEMS</span><span class="tag">ADR</span></div></div><button class="toggle" aria-label="Раскрыть детали">+</button></header>
+          <div class="node-summary"><span class="summary-lead">Что нужно зафиксировать до оценки и масштабирования</span><ul class="summary-points"><li>Незаполненные параметры X / N / Y / Z.</li><li>Порог Traceability ≥95% vs 100%.</li><li>Протокол для промежуточных значений метрик.</li></ul></div>
+          <div class="node-details">
+            <section class="detail-section"><h4>Решения, требующие владельца</h4><ul><li><strong>Порог материальности:</strong> влияние на выручку / риски ≥X% — определить по сегменту.</li><li><strong>Источники:</strong> ≥N новостей/день и список источников — не заполнено.</li><li><strong>Unit economics:</strong> стоимость инсайта ≤X ₽, ROI за N месяцев, конверсия Y% — рассчитать.</li><li><strong>Traceability:</strong> критерий Go ≥95%, FR-06 / NFR-05 / OKR — 100%. Нужно выбрать release gate и отдельно определить целевой уровень.</li><li><strong>Hallucination:</strong> ≤2% — целевой Go; &gt;5% — No-Go / kill. Интервал между 2% и 5% требует правила решения.</li><li><strong>Дедупликация:</strong> в одном месте ключ «заголовок + источник», в другом — «заголовок + источник + дата».</li><li><strong>Роль AI:</strong> утвердить юридически допустимый формат вариантов действий и дисклеймеров.</li><li><strong>Конфликт данных:</strong> подтвердить порядок приоритетов для аналитики ЦМИ, официальных источников и СМИ.</li></ul></section>
+            <section class="detail-section"><h4>Зафиксированные ADR</h4><ul><li>ADR-01: «инсайт → действие» вместо новостной ленты.</li><li>ADR-02: разделение «факт / аналитика / AI» для доверия C-level.</li><li>ADR-03: двухуровневая доставка — баланс внимания и информированности.</li></ul></section>
+            <div class="callout warn">Это не новые требования, а видимые пробелы и различия, уже присутствующие в исходных материалах.</div>
+          </div>
+        </article>
+      </div>
+      <div class="no-results" id="noResults">Совпадений не найдено</div>
+      <div class="hint"><b>Перемещение:</b> тянуть за пустое поле · <b>карточки:</b> за заголовок · <b>детали:</b> + · <b>масштаб:</b> колёсико</div>
+    </div>
+  </main>
+  <footer class="footbar"><div class="status"><span class="status-dot"></span> СХЕМА СВЯЗАНА · 12 УЗЛОВ · 1 СКВОЗНОЙ ПОТОК</div><div>Основа: предоставленные бизнес-требования, метрики, риски и user journey</div></footer>
+</div>
+<script>
+(() => {
+  const viewport = document.getElementById('viewport');
+  const world = document.getElementById('world');
+  const svg = document.getElementById('connections');
+  const search = document.getElementById('search');
+  const noResults = document.getElementById('noResults');
+  const nodeIds = ['problem','goals','personas','data','agent','insight','requirements','journey','metrics','risks','pilot','openpoints'];
+  const links = [
+    ['problem','goals','ценность'],
+    ['problem','requirements','декомпозиция'],
+    ['goals','metrics','измеряем эффект'],
+    ['personas','journey','сценарии ролей'],
+    ['data','agent','контекст + источники'],
+    ['agent','insight','структурированный вывод'],
+    ['requirements','agent','FR / NFR'],
+    ['insight','journey','понимание → действие'],
+    ['journey','metrics','события воронки'],
+    ['metrics','pilot','Go / No-Go'],
+    ['risks','agent','контроли / fallback'],
+    ['risks','insight','доверие и маркировка'],
+    ['pilot','goals','проверка гипотезы'],
+    ['openpoints','metrics','пороги к утверждению']
+  ];
+  let scale = 0.72, panX = -5, panY = -5;
+  let panState = null, dragState = null;
+  let moved = false;
+  const nodes = nodeIds.map(id => document.getElementById(id));
+  const NS = 'http://www.w3.org/2000/svg';
+
+  function setTransform(){ world.style.transform = `translate(${panX}px,${panY}px) scale(${scale})`; }
+  function centerFit(){
+    const w = viewport.clientWidth, h = viewport.clientHeight;
+    const fit = Math.min((w - 56) / 2660, (h - 50) / 1370);
+    scale = Math.max(.25, Math.min(1.05, fit));
+    panX = (w - 2660 * scale) / 2;
+    panY = (h - 1370 * scale) / 2;
+    setTransform();
+  }
+  function zoomAt(factor, cx = viewport.clientWidth/2, cy = viewport.clientHeight/2){
+    const old = scale;
+    scale = Math.min(1.35, Math.max(.25, scale * factor));
+    const ratio = scale / old;
+    panX = cx - (cx-panX)*ratio;
+    panY = cy - (cy-panY)*ratio;
+    setTransform();
+  }
+  function makeSvg(tag, attrs={}){
+    const el = document.createElementNS(NS,tag);
+    Object.entries(attrs).forEach(([k,v])=>el.setAttribute(k,v));
+    return el;
+  }
+  function anchor(rectA, rectB){
+    const ax = rectA.left + rectA.width/2, ay = rectA.top + rectA.height/2;
+    const bx = rectB.left + rectB.width/2, by = rectB.top + rectB.height/2;
+    const dx = bx-ax, dy = by-ay;
+    if(Math.abs(dx) > Math.abs(dy)*.85){
+      const sx = dx > 0 ? rectA.right : rectA.left;
+      const tx = dx > 0 ? rectB.left : rectB.right;
+      return {sx,sy:ay,tx,ty:by,horizontal:true,dir:dx>0?1:-1};
+    }
+    const sy = dy > 0 ? rectA.bottom : rectA.top;
+    const ty = dy > 0 ? rectB.top : rectB.bottom;
+    return {sx:ax,sy,tx:bx,ty,horizontal:false,dir:dy>0?1:-1};
+  }
+  function redraw(){
+    svg.querySelectorAll('.dynamic-link').forEach(el=>el.remove());
+    links.forEach(([from,to,label], i)=>{
+      const a = document.getElementById(from), b = document.getElementById(to);
+      if(!a || !b) return;
+      if(a.classList.contains('filtered-out') || b.classList.contains('filtered-out')) return;
+      const r1={left:a.offsetLeft,top:a.offsetTop,right:a.offsetLeft+a.offsetWidth,bottom:a.offsetTop+a.offsetHeight,width:a.offsetWidth,height:a.offsetHeight};
+      const r2={left:b.offsetLeft,top:b.offsetTop,right:b.offsetLeft+b.offsetWidth,bottom:b.offsetTop+b.offsetHeight,width:b.offsetWidth,height:b.offsetHeight};
+      const p=anchor(r1,r2);
+      let d, lx, ly;
+      if(p.horizontal){
+        const bend=Math.max(45,Math.min(115,Math.abs(p.tx-p.sx)*.42));
+        d=`M ${p.sx} ${p.sy} C ${p.sx+p.dir*bend} ${p.sy}, ${p.tx-p.dir*bend} ${p.ty}, ${p.tx} ${p.ty}`;
+        lx=(p.sx+p.tx)/2; ly=(p.sy+p.ty)/2-7;
+      }else{
+        const bend=Math.max(42,Math.min(105,Math.abs(p.ty-p.sy)*.42));
+        d=`M ${p.sx} ${p.sy} C ${p.sx} ${p.sy+p.dir*bend}, ${p.tx} ${p.ty-p.dir*bend}, ${p.tx} ${p.ty}`;
+        lx=(p.sx+p.tx)/2+7; ly=(p.sy+p.ty)/2;
+      }
+      const path=makeSvg('path',{d,class:`connection dynamic-link ${i===3||i===7||i===11?'secondary':''}`, 'marker-end':'url(#arrowhead)'});
+      svg.appendChild(path);
+      if(i===0||i===4||i===5||i===6||i===9||i===12){
+        const text=makeSvg('text',{x:lx,y:ly,class:'connection-label dynamic-link','text-anchor':'middle'});
+        text.textContent=label;svg.appendChild(text);
+      }
+    });
+  }
+  function toggleNode(node){
+    node.classList.toggle('expanded');
+    const btn=node.querySelector('.toggle');
+    btn.setAttribute('aria-label',node.classList.contains('expanded')?'Свернуть детали':'Раскрыть детали');
+    btn.textContent=node.classList.contains('expanded')?'−':'+';
+    requestAnimationFrame(redraw);
+  }
+  nodes.forEach(node=>{
+    const btn=node.querySelector('.toggle');
+    btn.addEventListener('click',e=>{e.stopPropagation();toggleNode(node)});
+    node.querySelector('.node-header').addEventListener('pointerdown', e=>{
+      if(e.target.closest('button')) return;
+      e.preventDefault(); e.stopPropagation();
+      const left=node.offsetLeft, top=node.offsetTop;
+      dragState={node,startX:e.clientX,startY:e.clientY,left,top,pointerId:e.pointerId};
+      node.setPointerCapture?.(e.pointerId);
+      node.classList.add('active'); moved=false;
+    });
+    node.addEventListener('pointerup',()=>{if(dragState?.node===node){node.classList.remove('active');dragState=null;requestAnimationFrame(redraw)}});
+    node.addEventListener('pointercancel',()=>{node.classList.remove('active');dragState=null});
+  });
+  viewport.addEventListener('pointerdown', e=>{
+    if(e.target.closest('.node')) return;
+    if(e.target.closest('button,input')) return;
+    panState={x:e.clientX,y:e.clientY,panX,panY,pointerId:e.pointerId};
+    viewport.classList.add('panning'); viewport.setPointerCapture?.(e.pointerId);
+  });
+  window.addEventListener('pointermove', e=>{
+    if(dragState){
+      const dx=(e.clientX-dragState.startX)/scale, dy=(e.clientY-dragState.startY)/scale;
+      if(Math.abs(dx)>2||Math.abs(dy)>2) moved=true;
+      dragState.node.style.left=`${dragState.left+dx}px`;
+      dragState.node.style.top=`${dragState.top+dy}px`;
+      redraw();
+    } else if(panState){
+      panX=panState.panX+(e.clientX-panState.x);panY=panState.panY+(e.clientY-panState.y);setTransform();
+    }
+  });
+  window.addEventListener('pointerup',()=>{
+    if(dragState){dragState.node.classList.remove('active');dragState=null;requestAnimationFrame(redraw)}
+    if(panState){panState=null;viewport.classList.remove('panning')}
+  });
+  viewport.addEventListener('wheel', e=>{
+    e.preventDefault();
+    const factor=e.deltaY<0?1.09:1/1.09;
+    zoomAt(factor,e.clientX-viewport.getBoundingClientRect().left,e.clientY-viewport.getBoundingClientRect().top);
+  },{passive:false});
+  document.getElementById('zoomIn').addEventListener('click',()=>zoomAt(1.15));
+  document.getElementById('zoomOut').addEventListener('click',()=>zoomAt(1/1.15));
+  document.getElementById('fit').addEventListener('click',centerFit);
+  document.getElementById('collapseAll').addEventListener('click',()=>{nodes.forEach(n=>{n.classList.remove('expanded');n.querySelector('.toggle').textContent='+'});requestAnimationFrame(redraw)});
+  document.getElementById('expandAll').addEventListener('click',()=>{nodes.forEach(n=>{n.classList.add('expanded');n.querySelector('.toggle').textContent='−'});requestAnimationFrame(redraw)});
+  search.addEventListener('input',()=>{
+    const q=search.value.trim().toLocaleLowerCase('ru');let matches=0;
+    nodes.forEach(n=>{
+      const hay=(n.innerText+' '+(n.dataset.search||'')).toLocaleLowerCase('ru');
+      const match=!q||hay.includes(q);n.classList.toggle('dimmed',!match);n.classList.toggle('filtered-out',!match);if(match)matches++;
+    });
+    noResults.style.display=matches?'none':'block';redraw();
+  });
+  window.addEventListener('resize',()=>{redraw()});
+  setTransform();requestAnimationFrame(redraw);
+})();
+</script>
+</body>
+</html>

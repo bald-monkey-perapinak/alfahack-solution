@@ -1,0 +1,4 @@
+allowBuilds:
+  core-js: false
+minimumReleaseAgeExclude:
+  - '@alfalab/icons-glyph@2.293.3'

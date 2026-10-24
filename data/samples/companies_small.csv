@@ -1,0 +1,5 @@
+SYNTHETIC_U;ORG_TYPE;OKFS_NAME;COMPANY_AGE_YEARS_GRADATION;ECO_MARK_LABEL;MAINOKVED_CODE;MAINOKVED_NAME;REVENUE_COMPANY;REGION;CITY;GROUP_ID;FTS_FLAG;FTS_COUNTRY_NAME;CL_PRODUCT_RKO_MARK;CL_PRODUCT_GAR_MARK;CL_PRODUCT_LOA_MARK;CL_PRODUCT_LEA_MARK;CL_PRODUCT_DEP_MARK;CL_PRODUCT_ZPP_MARK;FACTORING_MARK
+DEMO_MANUFACTURING;КОММ_ОРГ;ЧАСТНАЯ СОБСТВЕННОСТЬ;4-7;Оптимизация;25.11;Демонстрация: производство металлоконструкций;20000000000;Демонстрационный регион;Демонстрационный город;DEMO_GROUP_DEMO_MANUFACTURING;1;КИТАЙ;0;0;1;0;0;0;0
+DEMO_RETAIL;КОММ_ОРГ;ЧАСТНАЯ СОБСТВЕННОСТЬ;4-7;Оптимизация;47.11;Демонстрация: розничная торговля;20000000000;Демонстрационный регион;Демонстрационный город;DEMO_GROUP_DEMO_RETAIL;0;;0;0;0;0;1;0;0
+DEMO_LOGISTICS;КОММ_ОРГ;ЧАСТНАЯ СОБСТВЕННОСТЬ;4-7;Оптимизация;49.41;Демонстрация: грузовые перевозки;20000000000;Демонстрационный регион;Демонстрационный город;DEMO_GROUP_DEMO_LOGISTICS;1;КИТАЙ;0;0;1;0;0;0;0
+DEMO_SOFTWARE;КОММ_ОРГ;ЧАСТНАЯ СОБСТВЕННОСТЬ;4-7;Оптимизация;62.01;Демонстрация: разработка ПО;20000000000;Демонстрационный регион;Демонстрационный город;DEMO_GROUP_DEMO_SOFTWARE;0;;0;0;0;0;1;0;0

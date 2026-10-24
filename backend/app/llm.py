@@ -1,4 +1,4 @@
-"""Explicit opt-in LLM adapter. No home-directory config, implicit models or fallback."""
+"""Explicit opt-in client for the approved OpenAI-compatible hackathon gateway."""
 
 import json
 
@@ -6,7 +6,9 @@ import httpx
 
 
 class LLMUnavailable(RuntimeError):
-    pass
+    def __init__(self, code="llm_unavailable"):
+        super().__init__(code)
+        self.code = code
 
 
 class LLM:
@@ -26,30 +28,57 @@ class LLM:
 
     def json(self, system: str, data: dict) -> dict:
         if self.settings.llm_mode != "live":
-            raise LLMUnavailable("Live mode is disabled")
+            raise LLMUnavailable("llm_disabled")
         try:
-            with httpx.Client(timeout=60, verify=True, follow_redirects=False, trust_env=False) as client:
+            with httpx.Client(
+                timeout=self.settings.llm_timeout_seconds,
+                verify=True,
+                follow_redirects=False,
+                trust_env=False,
+            ) as client:
                 response = client.post(
                     self.settings.llm_base_url.rstrip("/") + "/chat/completions",
                     headers={"Authorization": "Bearer " + self.settings.llm_api_key.get_secret_value()},
                     json={
                         "model": self.settings.llm_model,
                         "temperature": 0.1,
-                        "max_tokens": 1800,
+                        "max_tokens": self.settings.llm_max_tokens,
+                        "response_format": {"type": "json_object"},
+                        "reasoning": {"effort": self.settings.llm_reasoning_effort},
                         "messages": [
                             {"role": "system", "content": system},
                             {"role": "user", "content": json.dumps(data, ensure_ascii=False)},
                         ],
                     },
                 )
-                response.raise_for_status()
-                text = response.json()["choices"][0]["message"]["content"].strip()
-                if text.startswith("```"):
-                    text = text[text.index("\n") + 1 :].rsplit("```", 1)[0].strip()
-                result = json.loads(text)
-                if not isinstance(result, dict):
-                    raise ValueError("Expected JSON object")
-                return result
-        except (httpx.HTTPError, ValueError, KeyError, IndexError, TypeError):
-            # Never propagate response bodies, provider URLs, prompt or credentials to logs/API.
-            raise LLMUnavailable("LLM request failed or returned invalid JSON") from None
+            if response.status_code >= 400:
+                # Classify locally; never return provider text, URL, headers or prompt.
+                body = response.content[:4096].lower()
+                if response.status_code == 402 or b"budget has been exceeded" in body:
+                    raise LLMUnavailable("llm_budget_exceeded")
+                if response.status_code in (401, 403):
+                    raise LLMUnavailable("llm_auth_failed")
+                if response.status_code == 429:
+                    raise LLMUnavailable("llm_rate_limited")
+                if response.status_code >= 500:
+                    raise LLMUnavailable("llm_provider_unavailable")
+                raise LLMUnavailable("llm_request_failed")
+            choice = response.json()["choices"][0]
+            if choice.get("finish_reason") == "length":
+                raise LLMUnavailable("llm_output_truncated")
+            content = choice["message"].get("content")
+            if not isinstance(content, str) or not content.strip():
+                raise LLMUnavailable("llm_empty_response")
+            text = content.strip()
+            if text.startswith("```"):
+                text = text[text.index("\n") + 1 :].rsplit("```", 1)[0].strip()
+            result = json.loads(text)
+            if not isinstance(result, dict):
+                raise LLMUnavailable("llm_invalid_json")
+            return result
+        except httpx.TimeoutException:
+            raise LLMUnavailable("llm_timeout") from None
+        except httpx.HTTPError:
+            raise LLMUnavailable("llm_transport_error") from None
+        except (ValueError, KeyError, IndexError, TypeError):
+            raise LLMUnavailable("llm_invalid_response") from None

@@ -168,24 +168,26 @@ class Worker:
                     (Jsonb(summary), job["id"], self.owner),
                 )
         except Exception as exc:
+            error_code = getattr(exc, "code", "analysis_failed")
             logger.error("analysis_failed job_id=%s exception_type=%s", job["id"], type(exc).__name__)
             with self.db.transaction() as conn:
                 if run_id:
                     conn.execute(
-                        """UPDATE analysis_runs SET status='failed',error_message='analysis_failed',
+                        """UPDATE analysis_runs SET status='failed',error_message=%s,
                         finished_at=NOW(),steps=%s WHERE id=%s AND status='running'""",
                         (
+                            error_code,
                             Jsonb(
                                 getattr(exc, "steps", [])
-                                + [{"tool": "error", "result": {"code": "analysis_failed"}}]
+                                + [{"tool": "error", "result": {"code": error_code}}]
                             ),
                             run_id,
                         ),
                     )
                 conn.execute(
-                    """UPDATE analysis_jobs SET status='failed',error_code='analysis_failed',
+                    """UPDATE analysis_jobs SET status='failed',error_code=%s,
                     finished_at=NOW() WHERE id=%s AND status='running' AND lease_owner=%s""",
-                    (job["id"], self.owner),
+                    (error_code, job["id"], self.owner),
                 )
         finally:
             stop.set()

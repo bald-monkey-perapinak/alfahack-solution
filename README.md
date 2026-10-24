@@ -118,10 +118,13 @@ POST /api/v1/ingestion/news принимает пачку до 50 статей �
 ```dotenv
 LLM_MODE=live
 LLM_ALLOW_EXTERNAL=true
-LLM_BASE_URL=https://<approved-provider>/v1
+LLM_BASE_URL=https://changellenge.up.railway.app/v1
 LLM_API_KEY=<private-key>
-LLM_MODEL=<exact-approved-deployment-id>
-LLM_ALLOWED_MODELS=["<exact-approved-deployment-id>"]
+LLM_MODEL=qwen/qwen3.6-35b-a3b
+LLM_ALLOWED_MODELS=["qwen/qwen3.6-35b-a3b"]
+LLM_REASONING_EFFORT=none
+LLM_MAX_TOKENS=3000
+LLM_TIMEOUT_SECONDS=90
 ```
 
 Deployment ID берётся у организаторов и должен соответствовать разрешённой
@@ -133,8 +136,10 @@ DeepSeek-V4.1-Flash, Qwen3-VL-30B-A3B-Instruct или Kimi-K2.6.
 В live-режиме отправляется минимальный бизнес-контекст, без имени человека,
 email, synthetic_u, выручки и платежей. Использовать только разрешённый endpoint
 и материалы. При ошибке нет скрытой подмены ответа заглушкой: задание получает
-failed. Полноценный живой вызов зависит от предоставленного ключа; тесты
-проверяют протокол провайдера на mock-ответах.
+failed. Живой сквозной сценарий с синтетическим профилем проверен на шлюзе
+организаторов: извлечение факторов, инсайт и уточняющий вопрос с цитатами.
+Настройки и безопасные коды ошибок: [docs/llm.md](docs/llm.md).
+Повторная проверка подключения: `uv run python -m scripts.check_llm`.
 
 ## Проверка
 

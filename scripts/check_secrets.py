@@ -24,6 +24,15 @@ def main():
         capture_output=True,
         check=True,
     )
+    known_secrets = []
+    local_env = ROOT / ".env"
+    if local_env.is_file():
+        for line in local_env.read_text().splitlines():
+            name, separator, value = line.partition("=")
+            if separator and name in ("LLM_API_KEY", "INGEST_API_KEY", "POSTGRES_PASSWORD"):
+                value = value.strip().strip("\"'")
+                if len(value) >= 8 and value not in ("local-development-only", "changeme", "placeholder"):
+                    known_secrets.append(value.encode())
     problems = []
     for raw in set(result.stdout.split(b"\0")):
         if not raw:
@@ -43,7 +52,9 @@ def main():
         versions = [staged.stdout] if staged.returncode == 0 else []
         if path.is_file():
             versions.append(path.read_bytes())
-        if any(pattern.search(content) for content in versions for pattern in PATTERNS):
+        if any(pattern.search(content) for content in versions for pattern in PATTERNS) or any(
+            secret in content for content in versions for secret in known_secrets
+        ):
             problems.append((relative, "potential secret"))
     for path, reason in sorted(problems):
         print(f"{path}: {reason}")

@@ -1,5 +1,6 @@
 from functools import lru_cache
 from pathlib import Path
+from typing import Literal
 
 from pydantic import Field, SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -20,6 +21,9 @@ class Settings(BaseSettings):
     llm_api_key: SecretStr = SecretStr("")
     llm_model: str = ""
     llm_allowed_models: list[str] = []
+    llm_reasoning_effort: Literal["none", "low", "medium", "high"] = "none"
+    llm_max_tokens: int = Field(default=3000, ge=128, le=16000)
+    llm_timeout_seconds: float = Field(default=90, ge=5, le=180)
     session_hours: int = Field(default=24, ge=1, le=168)
     worker_poll_seconds: float = 1
     job_lease_seconds: int = 180

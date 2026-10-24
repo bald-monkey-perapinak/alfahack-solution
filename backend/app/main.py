@@ -440,7 +440,9 @@ def create_app(settings=None, database=None):
                 ):
                     raise ValueError("Invalid citations")
                 answer = data["answer"][:6000]
-            except (LLMUnavailable, ValueError, TypeError):
+            except LLMUnavailable as exc:
+                raise HTTPException(502, detail={"code": exc.code}) from None
+            except (ValueError, TypeError):
                 raise HTTPException(502, detail={"code": "answer_generation_failed"}) from None
         else:
             answer = (

@@ -11,9 +11,12 @@ import { buildNewsFeed } from '../lib/news-layout';
 import { demoNews as allNews } from '../mocks/news';
 import { topics, type News, type Topic } from '../types/news';
 
-export function NewsShowcase() {
-  const [favorites, setFavorites] = useState(() => new Set(allNews.filter((news) => news.isFavorite).map((news) => news.id)));
-  const [tab, setTab] = useState('all');
+export function NewsShowcase({ favorites, onFavorite: toggleFavorite, view, onViewChange }: {
+  favorites: ReadonlySet<string>;
+  onFavorite: (id: string) => void;
+  view: 'feed' | 'favorites';
+  onViewChange: (view: 'feed' | 'favorites') => void;
+}) {
   const [topic, setTopic] = useState<Topic | 'all'>('all');
   const [urgentOnly, setUrgentOnly] = useState(false);
   const [search, setSearch] = useState('');
@@ -30,18 +33,10 @@ export function NewsShowcase() {
   const filteredNews = useMemo(() => allNews
     .map((news) => ({ ...news, isFavorite: favorites.has(news.id) })).filter((news) => {
       const matchesText = `${news.title} ${news.summary} ${news.source.name} ${news.topic}`.toLocaleLowerCase('ru').includes(search.trim().toLocaleLowerCase('ru'));
-      return matchesText && (tab !== 'favorites' || news.isFavorite) && (topic === 'all' || news.topic === topic) && (!urgentOnly || news.urgency === 'urgent');
-    }), [favorites, tab, topic, urgentOnly, search]);
+      return matchesText && (view !== 'favorites' || news.isFavorite) && (topic === 'all' || news.topic === topic) && (!urgentOnly || news.urgency === 'urgent');
+    }), [favorites, view, topic, urgentOnly, search]);
   const sections = useMemo(() => buildNewsFeed(filteredNews), [filteredNews]);
   const visibleCount = filteredNews.length;
-
-  function toggleFavorite(id: string) {
-    setFavorites((previous) => {
-      const next = new Set(previous);
-      if (next.has(id)) next.delete(id); else next.add(id);
-      return next;
-    });
-  }
 
   async function shareNews(news: News) {
     const url = new URL(window.location.href);
@@ -55,26 +50,19 @@ export function NewsShowcase() {
   }
 
   function resetFilters() {
-    setSearch(''); setTopic('all'); setUrgentOnly(false); setTab('all');
+    setSearch(''); setTopic('all'); setUrgentOnly(false);
   }
 
   return (
     <>
-      <header className="app-header">
-        <a href="/" className="brand" aria-label="Альфа-Бизнес — главная">
-          <span className="brand__mark" aria-hidden="true">А</span>
-          <span>Альфа-Бизнес<span className="brand__divider" /> <span className="brand__service">Новости и аналитика</span></span>
-        </a>
-        <span className="header-demo"><span />Демо</span>
-      </header>
       <main className="workspace">
         <div className="page-heading">
-          <div><p className="eyebrow">ИНФОРМАЦИЯ ДЛЯ ВАШЕГО БИЗНЕСА</p><h1>Новости и аналитика</h1><p className="page-description">События, которые влияют на ваш бизнес. Главное — с AI-анализом.</p></div>
+          <div><p className="eyebrow">ИНФОРМАЦИЯ ДЛЯ ВАШЕГО БИЗНЕСА</p><h1>{view === 'favorites' ? 'Избранное' : 'Новости и аналитика'}</h1><p className="page-description">{view === 'favorites' ? 'Сохранённые новости — всё важное под рукой.' : 'События, которые влияют на ваш бизнес. Главное — с AI-анализом.'}</p></div>
           <div className="search-field"><Input size={40} block value={search} onChange={(event) => setSearch(event.target.value)}
             leftAddons={<MagnifierMIcon aria-hidden="true" />} placeholder="Поиск по новостям и темам" aria-label="Поиск по новостям и темам" clear /></div>
         </div>
         <div className="feed-controls">
-          <Tabs selectedId={tab} onChange={(_, { selectedId }) => setTab(String(selectedId))}
+          <Tabs selectedId={view === 'favorites' ? 'favorites' : 'all'} onChange={(_, { selectedId }) => onViewChange(selectedId === 'favorites' ? 'favorites' : 'feed')}
             view="secondary" tagShape="rounded" tagView="filled" size="s" className="feed-tabs">
             <Tab id="all" title={<>Все новости <span className="tab-count">{allNews.length}</span></>} />
             <Tab id="favorites" title={<>Избранное <span className="tab-count">{favorites.size}</span></>} />
@@ -94,7 +82,7 @@ export function NewsShowcase() {
         <div className="news-feed">
           {sections.map((section) => <NewsFeedSection key={section.id} section={section} onFavorite={toggleFavorite}
             onAnalyze={(news) => { setSelectedNews(news); setAnalysisOpen(true); }} onShare={shareNews} />)}
-          {sections.length === 0 && <div className="empty-state"><MagnifierMIcon aria-hidden="true" /><h2>Новостей пока нет</h2><p>Попробуйте другую тему или измените условия поиска.</p><Button size={40} view="secondary" onClick={resetFilters}>Сбросить фильтры</Button></div>}
+          {sections.length === 0 && <div className="empty-state"><MagnifierMIcon aria-hidden="true" /><h2>{view === 'favorites' && favorites.size === 0 ? 'В избранном пока нет новостей' : 'Новостей пока нет'}</h2><p>{view === 'favorites' && favorites.size === 0 ? 'Сохраняйте новости с помощью закладки в карточке.' : 'Попробуйте другую тему или измените условия поиска.'}</p>{view === 'favorites' && favorites.size === 0 ? <Button href="#/" size={40} view="secondary">Перейти к новостям</Button> : <Button size={40} view="secondary" onClick={resetFilters}>Сбросить фильтры</Button>}</div>}
         </div>
         <footer className="demo-footer">Пример интерфейса по дизайн-системе. Новости, время и оценки ИИ — демонстрационные данные.</footer>
       </main>

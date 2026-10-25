@@ -7,7 +7,7 @@
   "scripts": {
     "dev": "vite --host 127.0.0.1",
     "typecheck": "tsc --noEmit",
-    "test": "node --experimental-strip-types --test tests/compose-news.test.mjs tests/arrange-news.test.mjs tests/build-feed.test.mjs",
+    "test": "node --experimental-strip-types --test tests/compose-news.test.mjs tests/arrange-news.test.mjs tests/build-feed.test.mjs tests/profile.test.mjs tests/navigation.test.mjs tests/auth.test.mjs",
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview --host 127.0.0.1"
   },

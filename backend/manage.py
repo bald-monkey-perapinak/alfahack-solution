@@ -52,7 +52,7 @@ def migrate(url, baseline=False):
                     ).fetchone():
                         raise RuntimeError("Existing schema is incompatible with migration 001")
             else:
-                sql = re.sub(r"^\s*BEGIN;", "", path.read_text(), count=1, flags=re.I)
+                sql = re.sub(r"^\s*BEGIN;", "", path.read_text(encoding="utf-8"), count=1, flags=re.I)
                 sql = re.sub(r"COMMIT;\s*$", "", sql, count=1, flags=re.I)
                 conn.execute(sql)
             conn.execute("INSERT INTO schema_migrations(name,checksum) VALUES(%s,%s)", (path.name, digest))

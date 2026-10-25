@@ -29,6 +29,22 @@ def test_auth_and_validation(system):
     assert client.get("/api/v1/me", headers=headers).status_code == 401
 
 
+def test_material_pagination_counts_only_ready_publications(authorized):
+    client, db, settings, headers = authorized
+    with db.transaction() as conn:
+        conn.execute(
+            "UPDATE materials SET processing_status='pending' WHERE id="
+            "(SELECT min(id) FROM materials WHERE material_type='news')"
+        )
+    page = client.get("/api/v1/materials?kind=news&limit=1&offset=0", headers=headers).json()
+    count = db.one(
+        "SELECT count(*) AS n FROM materials WHERE material_type='news' AND processing_status='ready'"
+    )["n"]
+    assert page["total"] == count
+    assert len(page["items"]) == min(1, count)
+    assert page["limit"] == 1 and page["offset"] == 0
+
+
 def test_pipeline_feed_citations_and_idempotency(authorized):
     client, db, settings, headers = authorized
     response = client.post(

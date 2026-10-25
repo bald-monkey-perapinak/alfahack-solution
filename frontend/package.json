@@ -1,0 +1,30 @@
+{
+  "name": "alfa-business-frontend",
+  "private": true,
+  "version": "0.3.0",
+  "type": "module",
+  "packageManager": "pnpm@11.25.0",
+  "scripts": {
+    "dev": "vite --host 127.0.0.1",
+    "typecheck": "tsc --noEmit",
+    "build": "tsc --noEmit && vite build",
+    "test": "node --experimental-strip-types --test tests/*.test.mjs",
+    "preview": "vite preview --host 127.0.0.1"
+  },
+  "dependencies": {
+    "@alfalab/core-components": "50.37.0",
+    "@alfalab/core-components-config": "1.1.0",
+    "@alfalab/core-components-stack-context": "1.0.1",
+    "@alfalab/icons-glyph": "2.293.3",
+    "react": "19.2.0",
+    "react-dom": "19.2.0"
+  },
+  "devDependencies": {
+    "@types/node": "24.0.0",
+    "@types/react": "^19.2.0",
+    "@types/react-dom": "^19.2.0",
+    "@vitejs/plugin-react": "6.1.2",
+    "typescript": "^5.9.3",
+    "vite": "8.3.5"
+  }
+}

@@ -274,7 +274,10 @@ def create_app(settings=None, database=None):
             ORDER BY published_at DESC NULLS LAST,id DESC LIMIT %s OFFSET %s""",
                 (kind, limit, offset),
             ),
-            "total": db.one("SELECT count(*) AS n FROM materials WHERE material_type=%s", (kind,))["n"],
+            "total": db.one(
+                "SELECT count(*) AS n FROM materials WHERE material_type=%s AND processing_status='ready'",
+                (kind,),
+            )["n"],
             "limit": limit,
             "offset": offset,
         }

@@ -8,7 +8,7 @@ FastAPI + PostgreSQL + отдельный worker. ML из предоставле
 
 Нужны Docker Engine и Compose v2. Создать `.env` из `.env.example`, если его
 ещё нет, и задать случайные POSTGRES_PASSWORD / INGEST_API_KEY. В текущем
-локальном checkout `.env` уже создан со случайными значениями и правами 0600.
+локальном checkout `.env` уже создан со случайными значениями и исключён из Git.
 
 ```sh
 docker compose up --build -d
@@ -22,8 +22,31 @@ Compose поднимает PostgreSQL, применяет миграции, за
 - Проверка готовности: http://localhost:8000/health/ready
 - PostgreSQL: localhost:55432
 
-Сначала зарегистрировать пользователя с компанией из каталога. Готовых
-публичных логинов/паролей нет. Фронтенд в этом изменении не реализован.
+Сайт: **http://localhost:5173**. Сначала зарегистрировать пользователя с компанией
+из каталога. Готовых публичных логинов/паролей нет. Вход, профиль, новости,
+задания, результаты, источники, вопросы и обратная связь подключены к API.
+
+Frontend использует согласованный дизайн `frontend/design.md` и компоненты
+Alfa Core Components. Запуск через Compose включает nginx с проксированием
+`/api` и `/health`, поэтому браузер работает с одним origin.
+
+### Быстрый запуск в текущем Windows checkout
+
+Для этого checkout подготовлены `.venv`, локальная PostgreSQL в `runtime/`
+и зависимости frontend. Из корня проекта:
+
+```powershell
+python scripts/dev.py
+```
+
+Команда запускает API, worker и frontend без отдельных окон, применяет миграции
+и повторяемый demo-seed. Открыть http://127.0.0.1:5173.
+Проверка: `python scripts/dev.py --status`. Остановка: `python scripts/dev.py --stop`.
+Остановка сохраняет базу, аккаунты и анализы. Скрипт завершает только записанные
+им процессы с совпадающим временем запуска. Для другого компьютера используйте
+Compose либо ручной запуск ниже; portable PostgreSQL не входит в Git.
+
+Подробнее: [frontend/README.md](frontend/README.md).
 
 **Без ключа используется offline-режим по правилам**, с явной пометкой в ответе.
 Он нужен для воспроизводимой проверки интерфейса, а не для имитации вызова LLM.
@@ -57,6 +80,19 @@ uv run python -m backend.manage seed-demo
 uv run uvicorn backend.app.main:app --host 127.0.0.1 --port 8000 --no-access-log
 uv run python -m backend.worker
 ```
+
+В третьем терминале:
+
+```sh
+cd frontend
+pnpm install --frozen-lockfile
+pnpm dev
+```
+
+Vite проксирует запросы на `127.0.0.1:8000`. Настройки для другого адреса:
+`frontend/.env.example`. Для просмотра сборки после `pnpm build` используйте
+`pnpm preview`; proxy работает и в этом режиме. `dist/` в production обслуживает
+nginx из `frontend/Dockerfile`.
 
 DATABASE_URL из `.env` должен указывать на localhost:55432. Если пароль
 содержит зарезервированные символы URI, его нужно URL-кодировать; сгенерированный

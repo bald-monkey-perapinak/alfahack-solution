@@ -54,6 +54,16 @@ services:
     security_opt: ["no-new-privileges:true"]
     restart: unless-stopped
 
+  frontend:
+    build: ./frontend
+    ports:
+      - "127.0.0.1:5173:80"
+    depends_on:
+      api:
+        condition: service_healthy
+    security_opt: ["no-new-privileges:true"]
+    restart: unless-stopped
+
   worker:
     build: .
     env_file: .env

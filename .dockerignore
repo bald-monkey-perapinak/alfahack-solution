@@ -19,5 +19,7 @@ reports
 runtime
 backups
 node_modules
+**/node_modules
+frontend/dist
 .pytest_cache
 .ruff_cache

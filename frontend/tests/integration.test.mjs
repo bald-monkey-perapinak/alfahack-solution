@@ -1,0 +1,46 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { setTimeout as delay } from 'node:timers/promises';
+import { AnalyticsApi } from '../src/api/client.ts';
+
+const base = process.env.ALFA_TEST_API_URL;
+test('real API: register, profile, selected news, worker result, citations, feedback and logout', { skip: !base, timeout: 60000 }, async () => {
+  const api = new AnalyticsApi(base);
+  const health = await api.health();
+  assert.equal(health.generation_mode, 'offline', 'Use an offline test server; this test must not call an external LLM.');
+  const catalog = await api.organizations(); assert.ok(catalog.items.length);
+  const email = `frontend-integration-${crypto.randomUUID()}@example.test`;
+  const session = await api.register({ name: 'Тест интеграции', email, password: 'Integration-Test-Only-2026!', role: 'cfo', organization_id: catalog.items[0].id });
+  api.setToken(session.access_token);
+  assert.equal((await api.me()).email, email);
+  assert.equal((await api.feed()).total, 0);
+  const saved = await api.updateMe({ name: 'Сохранённый тест', role: 'treasurer' }); assert.equal(saved.name, 'Сохранённый тест');
+  assert.equal((await api.me()).role, 'treasurer');
+  assert.equal((await api.organization()).organization.id, catalog.items[0].id);
+  assert.ok(Array.isArray((await api.counterparties()).items));
+  const materials = await api.materials(); assert.ok(materials.items.length);
+  const materialId = materials.items[0].id;
+  const options = { max_events: 1, material_ids: [materialId] };
+  const key = crypto.randomUUID();
+  let job = await api.analyze(options, key);
+  assert.equal((await api.analyze(options, key)).id, job.id);
+  for (let attempt = 0; attempt < 40 && ['pending', 'running'].includes(job.status); attempt++) { await delay(250); job = await api.job(job.id); }
+  assert.equal(job.status, 'completed'); assert.equal(job.summary.processed, 1);
+  const feed = await api.feed();
+  assert.equal(feed.total, job.summary.created);
+  assert.ok(feed.total > 0, 'Seeded company and news should produce a grounded result.');
+  const result = await api.insight(feed.items[0].id);
+  assert.equal(result.primary_material_id, materialId);
+  assert.equal(result.target_role, 'treasurer');
+  assert.ok(result.confidence >= 0 && result.confidence <= 1);
+  for (const evidence of result.evidence) assert.ok((await api.material(evidence.material_id)).body.includes(evidence.quote));
+  const answer = await api.question(result.id, 'Какие условия нужно проверить?');
+  assert.equal(answer.generation_mode, 'offline'); assert.ok(answer.sources.length);
+  const feedback = await api.feedback(result.id, 'useful', 'Проверка сохранения');
+  assert.equal(feedback.rating, 'useful'); assert.equal(feedback.comment, 'Проверка сохранения');
+  await api.logout(); await assert.rejects(api.me(), { status: 401 });
+  const login = await api.login(email, 'Integration-Test-Only-2026!'); api.setToken(login.access_token);
+  assert.equal((await api.me()).name, 'Сохранённый тест');
+  assert.ok((await api.feed()).items.some((item) => item.id === result.id));
+  await api.logout();
+});

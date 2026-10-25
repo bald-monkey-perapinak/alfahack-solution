@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { AnalyticsApi, ApiError, isAborted } from '../api/client';
 import type { Job } from '../api/types';
+import { jobPublicationKey } from '../domain';
 
 const storageKey = (userId: number) => `alfa.analysis-job.${userId}`;
 function rememberedJob(userId: number): string | null {
@@ -12,7 +13,7 @@ export function useAnalysisJob(api: AnalyticsApi, userId: number, completed: () 
   const [job, setJob] = useState<Job | null>(null);
   const [error, setError] = useState<unknown>(null);
   const [retry, setRetry] = useState(0);
-  const done = useRef(new Set<string>());
+  const published = useRef(new Map<string, string>());
   const completeCallback = useRef(completed);
   completeCallback.current = completed;
   useEffect(() => {
@@ -25,8 +26,9 @@ export function useAnalysisJob(api: AnalyticsApi, userId: number, completed: () 
         const next = await api.job(id!, controller.signal);
         if (controller.signal.aborted) return;
         setJob(next); setError(null); failures = 0;
+        const key = jobPublicationKey(next);
+        if (key !== (published.current.get(next.id) || '')) { published.current.set(next.id, key); completeCallback.current(); }
         if (next.status === 'pending' || next.status === 'running') timer = setTimeout(poll, 1500);
-        else if (!done.current.has(next.id)) { done.current.add(next.id); completeCallback.current(); }
       } catch (cause) {
         if (controller.signal.aborted || isAborted(cause)) return;
         setError(cause);

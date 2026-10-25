@@ -168,7 +168,7 @@ def main():
         save_state(state)
     subprocess.run([str(PYTHON), "-X", "utf8", "-m", "backend.manage", "migrate"], check=True)
     if not args.no_seed:
-        subprocess.run([str(PYTHON), "-X", "utf8", "-m", "backend.manage", "seed-demo"], check=True)
+        subprocess.run([str(PYTHON), "-X", "utf8", "-m", "backend.bootstrap"], check=True)
     if not port_ready("127.0.0.1", 8000):
         spawn("api", [str(PYTHON), "-X", "utf8", "-m", "uvicorn", "backend.app.main:app", "--host", "127.0.0.1", "--port", "8000", "--no-access-log"], state)
     wait_http("http://127.0.0.1:8000/health/ready")

@@ -36,6 +36,7 @@ class Login(Input):
 
 
 class UserUpdate(Input):
+    organization_id: int | None = Field(default=None, gt=0)
     name: str | None = Field(default=None, min_length=1, max_length=255)
     role: Role | None = None
 

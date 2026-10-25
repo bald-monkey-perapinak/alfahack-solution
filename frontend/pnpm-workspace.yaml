@@ -1,0 +1,4 @@
+# Explicitly skip core-js postinstall; package contents are ready to use.
+# Keep dependency lifecycle scripts blocked unless individually reviewed.
+allowBuilds:
+  core-js: false

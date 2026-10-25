@@ -101,7 +101,7 @@ def import_companies(db, path):
             NULLIF(raw->>'REGION',''),NULLIF(raw->>'CITY',''),NULLIF(raw->>'GROUP_ID',''),
             NULLIF(raw->>'REVENUE_COMPANY','')::numeric,raw,
             CASE WHEN NULLIF(raw->>'FTS_COUNTRY_NAME','') IS NULL THEN ARRAY[]::text[]
-            ELSE regexp_split_to_array(raw->>'FTS_COUNTRY_NAME',',\\s*') END,"""
+            ELSE regexp_split_to_array(raw->>'FTS_COUNTRY_NAME',',[[:space:]]*') END,"""
             + ",".join(expressions)
             + """
             FROM company_import ON CONFLICT(synthetic_u) DO UPDATE SET
@@ -187,9 +187,11 @@ def import_bank(db, folder):
             source = conn.execute("""INSERT INTO sources(name,source_type) VALUES('Альфа-Банк: материалы кейса','bank_analytics')
                 ON CONFLICT(name,source_type) DO UPDATE SET name=EXCLUDED.name RETURNING id""").fetchone()
             conn.execute(
-                """INSERT INTO materials(source_id,material_type,source_ref,title,body,published_at,processing_status)
-                VALUES(%s,'bank_analytics',%s,%s,%s,%s,'ready') ON CONFLICT(source_id,source_ref) DO NOTHING""",
-                (source["id"], ref, title, body, published),
+                """INSERT INTO materials(source_id,material_type,source_ref,title,body,summary,published_at,processing_status,analysis_data)
+                VALUES(%s,'bank_analytics',%s,%s,%s,%s,%s,'ready','{"analysis_eligible": true, "origin": "organizers"}')
+                ON CONFLICT(source_id,source_ref) DO UPDATE SET title=EXCLUDED.title,body=EXCLUDED.body,
+                summary=EXCLUDED.summary,published_at=EXCLUDED.published_at,analysis_data=EXCLUDED.analysis_data""",
+                (source["id"], ref, title, body, re.sub(r"\s+", " ", body[:1000])[:500], published),
             )
         count += 1
     return {"bank_materials": count}

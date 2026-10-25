@@ -109,3 +109,53 @@ def test_budget_error_reaches_job_status(authorized, monkeypatch):
         db.one("SELECT error_message FROM analysis_runs WHERE job_id=%s", (job,))["error_message"]
         == "llm_budget_exceeded"
     )
+
+
+@pytest.mark.parametrize("kind", ["timeout", "transport", "rate", "provider", "auth", "budget", "invalid"])
+def test_only_transient_errors_retry_once(live_settings, monkeypatch, kind):
+    sleeps = []
+    calls = []
+    attempts = []
+    monkeypatch.setattr("backend.app.llm.time.sleep", sleeps.append)
+
+    def post(client, url, **kwargs):
+        assert client.timeout.connect == 10 and client.timeout.read == 180
+        calls.append(kwargs["json"])
+        if kind == "timeout":
+            raise httpx.ReadTimeout("private provider response")
+        if kind == "transport":
+            raise httpx.ConnectError("private provider response")
+        if kind == "invalid":
+            return reply({"choices": [{"message": {"content": "bad json"}}]})
+        return reply(
+            {"error": "private provider response"},
+            {"rate": 429, "provider": 503, "auth": 401, "budget": 402}[kind],
+        )
+
+    monkeypatch.setattr(httpx.Client, "post", post)
+    llm = LLM(live_settings)
+    llm.on_attempt = attempts.append
+    with pytest.raises(LLMUnavailable) as exc:
+        llm.json("private prompt", {"private": "data"})
+    transient = kind in ("timeout", "transport", "rate", "provider")
+    assert len(calls) == (2 if transient else 1)
+    assert attempts == ([1, 2] if transient else [1])
+    assert sleeps == ([2] if transient else [])
+    assert "private" not in str(exc.value)
+    if transient:
+        assert calls[0] == calls[1]
+
+
+def test_timeout_then_success_retries_only_failed_request(live_settings, monkeypatch):
+    calls = []
+    monkeypatch.setattr("backend.app.llm.time.sleep", lambda _: None)
+
+    def post(*args, **kwargs):
+        calls.append(1)
+        if len(calls) == 1:
+            raise httpx.ReadTimeout("private")
+        return reply({"choices": [{"finish_reason": "stop", "message": {"content": '{"ok":true}'}}]})
+
+    monkeypatch.setattr(httpx.Client, "post", post)
+    assert LLM(live_settings).json("test", {}) == {"ok": True}
+    assert len(calls) == 2

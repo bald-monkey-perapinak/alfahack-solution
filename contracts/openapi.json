@@ -374,6 +374,73 @@
         }
       }
     },
+    "/api/v1/me/connections": {
+      "get": {
+        "tags": [
+          "Profile"
+        ],
+        "summary": "Connections",
+        "operationId": "connections_api_v1_me_connections_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "max_depth",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 4,
+              "minimum": 1,
+              "default": 3,
+              "title": "Max Depth"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/data/status": {
+      "get": {
+        "tags": [
+          "Onboarding"
+        ],
+        "summary": "Data Status",
+        "operationId": "data_status_api_v1_data_status_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/materials": {
       "get": {
         "tags": [
@@ -1348,6 +1415,55 @@
         ],
         "title": "InsightView"
       },
+      "JobSummary": {
+        "properties": {
+          "total": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total"
+          },
+          "processed": {
+            "type": "integer",
+            "title": "Processed",
+            "default": 0
+          },
+          "created": {
+            "type": "integer",
+            "title": "Created",
+            "default": 0
+          },
+          "skipped": {
+            "type": "integer",
+            "title": "Skipped",
+            "default": 0
+          },
+          "failed": {
+            "type": "integer",
+            "title": "Failed",
+            "default": 0
+          },
+          "retrying": {
+            "type": "boolean",
+            "title": "Retrying",
+            "default": false
+          },
+          "materials": {
+            "items": {
+              "$ref": "#/components/schemas/MaterialOutcome"
+            },
+            "type": "array",
+            "title": "Materials"
+          }
+        },
+        "type": "object",
+        "title": "JobSummary"
+      },
       "JobView": {
         "properties": {
           "id": {
@@ -1399,9 +1515,7 @@
             "title": "Error Code"
           },
           "summary": {
-            "additionalProperties": true,
-            "type": "object",
-            "title": "Summary"
+            "$ref": "#/components/schemas/JobSummary"
           },
           "insight_ids": {
             "items": {
@@ -1447,6 +1561,47 @@
           "password"
         ],
         "title": "Login"
+      },
+      "MaterialOutcome": {
+        "properties": {
+          "material_id": {
+            "type": "integer",
+            "title": "Material Id"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "running",
+              "completed",
+              "skipped",
+              "failed"
+            ],
+            "title": "Status"
+          },
+          "error_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error Code"
+          },
+          "retries": {
+            "type": "integer",
+            "title": "Retries",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "required": [
+          "material_id",
+          "status"
+        ],
+        "title": "MaterialOutcome"
       },
       "MaterialPage": {
         "properties": {
@@ -1793,6 +1948,18 @@
       },
       "UserUpdate": {
         "properties": {
+          "organization_id": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "exclusiveMinimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Organization Id"
+          },
           "name": {
             "anyOf": [
               {

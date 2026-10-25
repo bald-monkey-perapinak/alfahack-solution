@@ -60,3 +60,9 @@ export function quoteSegments(body: string, quote?: string): { text: string; hig
   if (!quote) return [{ text: body, highlighted: false }];
   return body.split(quote).flatMap((text, index) => index ? [{ text: quote, highlighted: true }, { text, highlighted: false }] : [{ text, highlighted: false }]);
 }
+
+// Refresh the feed for newly committed insights and once on a terminal transition.
+export function jobPublicationKey(job: { status: string; insight_ids: number[] }): string {
+  const ids = [...new Set(job.insight_ids)].sort((a, b) => a - b).join(',');
+  return ids + (job.status === 'completed' || job.status === 'failed' ? `:${job.status}` : '');
+}

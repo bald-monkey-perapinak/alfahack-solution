@@ -8,7 +8,7 @@ export interface AnalysisOptions { material_ids?: number[]; max_events?: number;
 export interface Job {
   id: string; status: 'pending' | 'running' | 'completed' | 'failed';
   created_at: string; finished_at: string | null; error_code: string | null;
-  summary: { processed?: number; created?: number; skipped?: number }; insight_ids?: number[];
+  summary: { total?: number | null; processed?: number; created?: number; skipped?: number; failed?: number; retrying?: boolean; materials?: { material_id: number; status: 'pending' | 'running' | 'completed' | 'skipped' | 'failed'; error_code: string | null; retries?: number }[] }; insight_ids?: number[];
 }
 export interface FeedItem {
   id: number; title: string; relevance_score: number; confidence: number; created_at: string;
@@ -63,7 +63,7 @@ export class AnalyticsApi {
   }
   async logout() { await this.request<void>('/api/v1/auth/logout', { method: 'POST' }); this.setToken(null); }
   me() { return this.request<User>('/api/v1/me'); }
-  updateMe(body: { name?: string; role?: Role }) {
+  updateMe(body: { name?: string; role?: Role; organization_id?: number }) {
     return this.request<User>('/api/v1/me', { method: 'PATCH', body: JSON.stringify(body) });
   }
   analyze(options: AnalysisOptions = {}, key = crypto.randomUUID()) {

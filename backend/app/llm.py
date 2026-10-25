@@ -1,6 +1,7 @@
 """Explicit opt-in client for the approved OpenAI-compatible hackathon gateway."""
 
 import json
+import time
 
 import httpx
 
@@ -14,6 +15,7 @@ class LLMUnavailable(RuntimeError):
 class LLM:
     def __init__(self, settings):
         self.settings = settings
+        self.on_attempt = None
         if settings.llm_mode not in ("offline", "live"):
             raise ValueError("LLM_MODE must be offline or live")
         if settings.llm_mode == "live":
@@ -27,11 +29,24 @@ class LLM:
                 raise ValueError("LLM_MODEL must be explicitly included in LLM_ALLOWED_MODELS")
 
     def json(self, system: str, data: dict) -> dict:
+        transient = {"llm_timeout", "llm_transport_error", "llm_rate_limited", "llm_provider_unavailable"}
+        for attempt in (1, 2):
+            if self.on_attempt:
+                self.on_attempt(attempt)
+            try:
+                return self._json_once(system, data)
+            except LLMUnavailable as exc:
+                if attempt == 2 or exc.code not in transient:
+                    raise
+                time.sleep(2)
+        raise AssertionError("Unreachable")
+
+    def _json_once(self, system: str, data: dict) -> dict:
         if self.settings.llm_mode != "live":
             raise LLMUnavailable("llm_disabled")
         try:
             with httpx.Client(
-                timeout=self.settings.llm_timeout_seconds,
+                timeout=httpx.Timeout(self.settings.llm_timeout_seconds, connect=10),
                 verify=True,
                 follow_redirects=False,
                 trust_env=False,

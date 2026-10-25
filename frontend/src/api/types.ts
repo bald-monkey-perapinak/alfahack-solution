@@ -13,15 +13,15 @@ export type Company = Omit<Organization, 'name'> & {
   foreign_trade_countries: string[]; profile_data: Record<string, unknown>;
 };
 export type CompanyProfile = { company_id: string; observed: Record<string, unknown>; declared: Record<string, unknown>; inferred: Record<string, unknown>; exposures: Record<string, number>; confidence: number };
-export type OrganizationContext = { organization: Company; profile: CompanyProfile };
-export type Counterparty = { id: number; counterparty_id: number; counterparty_name: string; relation_type: 'supplier' | 'buyer' | 'partner' | 'other'; evidence: string; dependency_weight: number | null };
+export type OrganizationContext = { organization: Company; profile: CompanyProfile; data_mode?: string; data_origin?: string };
+export type Counterparty = { id: number | string; counterparty_id: number; counterparty_name: string; relation_type: 'supplier' | 'buyer' | 'partner' | 'other' | 'payment' | 'group' | 'shared_person'; evidence: string; dependency_weight: number | null; has_profile?: boolean };
 export type Counterparties = { items: Counterparty[]; note: string };
 export type GenerationMode = 'offline' | 'live';
 export type AnalysisOptions = { material_ids?: number[]; max_events: number };
 export type Job = {
   id: string; status: 'pending' | 'running' | 'completed' | 'failed'; parameters: AnalysisOptions;
   created_at: string; finished_at: string | null; error_code: string | null;
-  summary: { processed?: number; created?: number; skipped?: number }; insight_ids: number[];
+  summary: { total?: number | null; processed?: number; created?: number; skipped?: number; failed?: number; retrying?: boolean; materials?: { material_id: number; status: 'pending' | 'running' | 'completed' | 'skipped' | 'failed'; error_code: string | null; retries?: number }[] }; insight_ids: number[];
 };
 export type FeedItem = { id: number; title: string; relevance_score: number; confidence: number; created_at: string; primary_material_id: number; generation_mode: GenerationMode; is_demo: boolean; warnings: string[] };
 export type Evidence = { id: number; insight_id: number; material_id: number; section: string; claim: string; quote: string; locator: string | null; source_title: string; source_ref: string; published_at: string | null };
@@ -30,7 +30,7 @@ export type Insight = {
   bank_view: string | null; interpretation: string; relevance_reason: string; confidence: number; relevance_score: number;
   risks: string[]; opportunities: string[]; suggested_actions: { type?: string; label?: string; rationale?: string; priority?: number }[];
   created_at: string; target_role: Role; model_name: string; company_context: Record<string, unknown>;
-  payload: { generation_mode?: GenerationMode; is_demo?: boolean; warnings?: string[]; [key: string]: unknown };
+  payload: { generation_mode?: GenerationMode; is_demo?: boolean; warnings?: string[]; connection_analysis?: { examined_count: number; profiled_count: number; note: string; truncated: boolean; top_paths: { organization_id: number; label: string; depth: number; weight: number; signal: number; edges: { kind: string; evidence: string }[] }[] }; [key: string]: unknown };
   evidence: Evidence[]; steps: { tool: string; at?: string; result: unknown }[];
 };
 export type Material = { id: number; title: string; summary: string | null; published_at: string | null; material_type: 'news' | 'bank_analytics'; source_ref: string; is_demo: boolean };
@@ -39,4 +39,4 @@ export type QuestionAnswer = { answer: string; generation_mode: GenerationMode; 
 export type Rating = 'useful' | 'not_useful' | 'already_known';
 export type Feedback = { id: number; insight_id: number; user_id: number; rating: Rating; comment: string | null; updated_at: string };
 export type Roles = { items: { id: Role; name: string }[] };
-export type Health = { status: string; generation_mode: GenerationMode };
+export type Health = { status: string; generation_mode: GenerationMode; data_mode?: string };

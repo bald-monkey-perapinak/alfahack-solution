@@ -4,6 +4,10 @@ from psycopg.rows import dict_row
 from psycopg_pool import ConnectionPool
 
 
+class WorkerLeaseLost(RuntimeError):
+    pass
+
+
 class Database:
     def __init__(self, url: str):
         self.pool = ConnectionPool(

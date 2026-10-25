@@ -52,3 +52,13 @@ test('exact source quotes remain highlighted across paragraph breaks without cha
   assert.equal(parts.filter((part) => part.highlighted)[0].text, quote);
   assert.deepEqual(quoteSegments(body, ''), [{ text: body, highlighted: false }]);
 });
+
+test('new insights refresh the feed while the job is running; final state also refreshes', async () => {
+  const { jobPublicationKey } = await import('../src/domain.ts');
+  const running = (ids) => jobPublicationKey({ status: 'running', insight_ids: ids });
+  assert.equal(running([]), '');
+  assert.notEqual(running([1]), running([]));
+  assert.equal(running([2, 1]), running([1, 2]));
+  assert.notEqual(running([1, 2]), running([1]));
+  assert.notEqual(jobPublicationKey({ status: 'failed', insight_ids: [1] }), running([1]));
+});

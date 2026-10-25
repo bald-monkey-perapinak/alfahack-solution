@@ -16,7 +16,13 @@ export function isAborted(error: unknown): boolean { return error instanceof Err
 export function errorMessage(error: unknown): string {
   if (!(error instanceof ApiError)) return 'Не удалось связаться с сервером. Проверьте подключение и повторите попытку.';
   const messages: Record<string, string> = {
+    llm_invalid_output: 'Ответ модели не соответствует формату анализа.', insight_verification_failed: 'Ответ модели не прошёл проверку обоснованности.',
+    llm_timeout: 'Модель не ответила за отведённое время.', llm_transport_error: 'Соединение с моделью прервано.',
+    llm_budget_exceeded: 'Лимит бюджета LLM исчерпан.', llm_auth_failed: 'Провайдер отклонил ключ LLM.',
+    llm_rate_limited: 'Провайдер временно ограничил запросы.', llm_provider_unavailable: 'Сервис модели временно недоступен.',
     invalid_credentials: 'Неверный e-mail или пароль.', email_already_registered: 'Этот e-mail уже зарегистрирован. Войдите в аккаунт.',
+    organizer_company_required: 'Выберите компанию U_… в профиле и сохраните изменения.',
+    organizer_data_not_ready: 'Данные организаторов ещё загружаются.',
     organization_not_found: 'Компания больше недоступна. Выберите другую компанию из каталога.',
     authentication_required: 'Войдите в аккаунт, чтобы продолжить.', invalid_or_expired_token: 'Сессия завершена. Войдите повторно.',
     analysis_already_in_progress: 'У вас уже есть незавершённые задания. Дождитесь их завершения.',
@@ -84,15 +90,15 @@ export class AnalyticsApi {
   login(email: string, password: string, signal?: AbortSignal) { return this.request<Session>('/api/v1/auth/login', { method: 'POST', body: JSON.stringify({ email, password }), signal }, { public: true }); }
   async logout() { await this.request<void>('/api/v1/auth/logout', { method: 'POST' }); this.setToken(null); }
   me(signal?: AbortSignal) { return this.request<User>('/api/v1/me', { signal }); }
-  updateMe(body: Pick<User, 'name' | 'role'>, signal?: AbortSignal) { return this.request<User>('/api/v1/me', { method: 'PATCH', body: JSON.stringify(body), signal }); }
+  updateMe(body: Pick<User, 'name' | 'role'> & { organization_id?: number }, signal?: AbortSignal) { return this.request<User>('/api/v1/me', { method: 'PATCH', body: JSON.stringify(body), signal }); }
   organization(signal?: AbortSignal) { return this.request<OrganizationContext>('/api/v1/me/organization', { signal }); }
-  counterparties(signal?: AbortSignal) { return this.request<Counterparties>('/api/v1/me/counterparties?limit=100', { signal }); }
+  counterparties(signal?: AbortSignal) { return this.request<Counterparties>('/api/v1/me/counterparties?limit=20', { signal }); }
   analyze(body: AnalysisOptions, key: string, signal?: AbortSignal) { return this.request<Job>('/api/v1/analyses', { method: 'POST', headers: { 'Idempotency-Key': key }, body: JSON.stringify(body), signal }); }
   job(id: string, signal?: AbortSignal) { return this.request<Job>(`/api/v1/analyses/${encodeURIComponent(id)}`, { signal }); }
   feed(offset = 0, limit = 6, signal?: AbortSignal) { return this.request<Page<FeedItem>>(`/api/v1/feed?limit=${limit}&offset=${offset}`, { signal }); }
   insight(id: number, signal?: AbortSignal) { return this.request<Insight>(`/api/v1/insights/${id}`, { signal }); }
   materials(offset = 0, limit = 6, signal?: AbortSignal) { return this.request<Page<Material>>(`/api/v1/materials?kind=news&limit=${limit}&offset=${offset}`, { signal }); }
   material(id: number, signal?: AbortSignal) { return this.request<MaterialDetail>(`/api/v1/materials/${id}`, { signal }); }
-  question(id: number, question: string, signal?: AbortSignal) { return this.request<QuestionAnswer>(`/api/v1/insights/${id}/questions`, { method: 'POST', body: JSON.stringify({ question }), signal }, { timeout: 190000 }); }
+  question(id: number, question: string, signal?: AbortSignal) { return this.request<QuestionAnswer>(`/api/v1/insights/${id}/questions`, { method: 'POST', body: JSON.stringify({ question }), signal }, { timeout: 390000 }); }
   feedback(id: number, rating: Rating, comment?: string, signal?: AbortSignal) { return this.request<Feedback>(`/api/v1/insights/${id}/feedback`, { method: 'POST', body: JSON.stringify({ rating, ...(comment?.trim() ? { comment: comment.trim() } : {}) }), signal }); }
 }

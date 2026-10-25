@@ -18,6 +18,8 @@ from psycopg.types.json import Jsonb
 from .analytics import ingest_articles, make_profile
 from .body_limit import BodyLimitMiddleware
 from .config import get_settings
+from .connections import NOTE, build_context, neighbors
+from .data_mode import company_filter, material_filter
 from .db import Database
 from .llm import LLM, LLMUnavailable
 from .models import AnalysisRequest, Feedback, Ingest, Login, Question, Register, UserUpdate
@@ -125,7 +127,7 @@ def create_app(settings=None, database=None):
             """SELECT i.*,r.steps,r.company_context,r.target_role,r.model_name,
             j.user_id FROM insights i JOIN analysis_runs r ON r.id=i.run_id
             JOIN analysis_jobs j ON j.id=r.job_id WHERE i.id=%s AND j.user_id=%s
-            AND r.organization_id=%s AND j.status='completed'""",
+            AND r.organization_id=%s AND r.status='completed'""",
             (insight_id, current["id"], current["org_id"]),
         )
         if not row:
@@ -142,7 +144,11 @@ def create_app(settings=None, database=None):
             db.one("SELECT 1 FROM analysis_jobs LIMIT 1")
         except Exception:
             raise HTTPException(503, detail={"code": "database_not_ready"}) from None
-        return {"status": "ready", "generation_mode": settings.llm_mode}
+        if settings.data_mode == "organizers" and not db.one(
+            "SELECT 1 FROM dataset_imports WHERE dataset_name='organizers'"
+        ):
+            raise HTTPException(503, detail={"code": "organizer_data_not_ready"})
+        return {"status": "ready", "generation_mode": settings.llm_mode, "data_mode": settings.data_mode}
 
     @app.get("/api/v1/roles", tags=["Onboarding"])
     def roles():
@@ -167,16 +173,19 @@ def create_app(settings=None, database=None):
     ):
         # Public synthetic catalog only: never return raw profiles, revenue or payments here.
         pattern = "%" + q.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_") + "%"
-        where = "profile_data <> '{}' AND (synthetic_u ILIKE %s OR name ILIKE %s OR industry ILIKE %s)"
+        where = (
+            company_filter(settings.data_mode)
+            + " AND (synthetic_u ILIKE %s OR name ILIKE %s OR industry ILIKE %s OR region ILIKE %s)"
+        )
         total = db.one(
-            "SELECT count(*) AS total FROM organizations WHERE " + where, (pattern, pattern, pattern)
+            "SELECT count(*) AS total FROM organizations WHERE " + where, (pattern, pattern, pattern, pattern)
         )["total"]
         items = db.all(
             """SELECT id,COALESCE(name,synthetic_u) AS name,synthetic_u,industry,region
             FROM organizations WHERE """
             + where
             + " ORDER BY id LIMIT %s OFFSET %s",
-            (pattern, pattern, pattern, limit, offset),
+            (pattern, pattern, pattern, pattern, limit, offset),
         )
         return {"items": items, "total": total, "limit": limit, "offset": offset}
 
@@ -184,7 +193,8 @@ def create_app(settings=None, database=None):
     def register(body: Register, request: Request):
         limits.check(("auth", request.client.host if request.client else "unknown"))
         org = db.one(
-            "SELECT id FROM organizations WHERE id=%s AND profile_data<>'{}'", (body.organization_id,)
+            "SELECT id FROM organizations WHERE id=%s AND " + company_filter(settings.data_mode),
+            (body.organization_id,),
         )
         if not org:
             raise HTTPException(404, detail={"code": "organization_not_found"})
@@ -233,12 +243,26 @@ def create_app(settings=None, database=None):
         if not body.model_fields_set or any(v is None for v in body.model_dump(exclude_unset=True).values()):
             raise HTTPException(422, detail={"code": "non_null_profile_fields_required"})
         with db.transaction() as conn:
+            conn.execute("SELECT id FROM users WHERE id=%s FOR UPDATE", (current["id"],))
+            organization_id = body.organization_id or current["org_id"]
+            if organization_id != current["org_id"]:
+                if not conn.execute(
+                    "SELECT id FROM organizations WHERE id=%s AND " + company_filter(settings.data_mode),
+                    (organization_id,),
+                ).fetchone():
+                    raise HTTPException(404, detail={"code": "organization_not_found"})
+                if conn.execute(
+                    "SELECT 1 FROM analysis_jobs WHERE user_id=%s AND status IN ('pending','running')",
+                    (current["id"],),
+                ).fetchone():
+                    raise HTTPException(409, detail={"code": "analysis_already_in_progress"})
             return conn.execute(
-                """UPDATE users SET name=%s,role=%s WHERE id=%s
+                """UPDATE users SET name=%s,role=%s,org_id=%s WHERE id=%s
                 RETURNING id,name,email,role,org_id""",
                 (
                     body.name or current["name"],
                     body.role.value if body.role else current["role"],
+                    organization_id,
                     current["id"],
                 ),
             ).fetchone()
@@ -246,18 +270,29 @@ def create_app(settings=None, database=None):
     @app.get("/api/v1/me/organization", tags=["Profile"])
     def my_organization(current=Depends(user)):
         org = db.one("SELECT * FROM organizations WHERE id=%s", (current["org_id"],))
-        return {"organization": org, "profile": make_profile(org)}
+        return {
+            "organization": org,
+            "profile": make_profile(org),
+            "data_mode": settings.data_mode,
+            "data_origin": "organizers" if (org["synthetic_u"] or "").startswith("U_") else "demo",
+        }
 
     @app.get("/api/v1/me/counterparties", tags=["Profile"])
     def counterparties(limit: int = Query(20, ge=1, le=100), current=Depends(user)):
+        return {"items": neighbors(db, current["org_id"], limit), "note": NOTE}
+
+    @app.get("/api/v1/me/connections", tags=["Profile"])
+    def connections(max_depth: int = Query(3, ge=1, le=4), current=Depends(user)):
+        return build_context(db, current["org_id"], max_depth=max_depth)
+
+    @app.get("/api/v1/data/status", tags=["Onboarding"])
+    def data_status():
+        row = db.one("SELECT imported_at,statistics FROM dataset_imports WHERE dataset_name='organizers'")
         return {
-            "items": db.all(
-                """SELECT r.*,COALESCE(o.name,o.synthetic_u) AS counterparty_name
-            FROM organization_relations r JOIN organizations o ON o.id=r.counterparty_id
-            WHERE organization_id=%s ORDER BY dependency_weight DESC NULLS LAST LIMIT %s""",
-                (current["org_id"], limit),
-            ),
-            "note": "Подтверждённые зависимости; платежи не доказывают поставку.",
+            "mode": settings.data_mode,
+            "organizer_data_loaded": bool(row),
+            "imported_at": row["imported_at"] if row else None,
+            "statistics": row["statistics"] if row else {},
         }
 
     @app.get("/api/v1/materials", response_model=MaterialPage, tags=["Materials"])
@@ -267,17 +302,16 @@ def create_app(settings=None, database=None):
         offset: int = Query(0, ge=0),
         current=Depends(user),
     ):
+        where = material_filter(settings.data_mode, kind)
         return {
             "items": db.all(
                 """SELECT id,title,summary,published_at,material_type,source_ref,is_demo
-            FROM materials WHERE material_type=%s AND processing_status='ready'
-            ORDER BY published_at DESC NULLS LAST,id DESC LIMIT %s OFFSET %s""",
-                (kind, limit, offset),
+            FROM materials WHERE """
+                + where
+                + " ORDER BY published_at DESC NULLS LAST,id DESC LIMIT %s OFFSET %s",
+                (limit, offset),
             ),
-            "total": db.one(
-                "SELECT count(*) AS n FROM materials WHERE material_type=%s AND processing_status='ready'",
-                (kind,),
-            )["n"],
+            "total": db.one("SELECT count(*) AS n FROM materials WHERE " + where)["n"],
             "limit": limit,
             "offset": offset,
         }
@@ -309,6 +343,11 @@ def create_app(settings=None, database=None):
     ):
         limits.check(("analysis", current["id"]), maximum=10)
         params = body.model_dump()
+        if not db.one(
+            "SELECT id FROM organizations WHERE id=%s AND " + company_filter(settings.data_mode),
+            (current["org_id"],),
+        ):
+            raise HTTPException(409, detail={"code": "organizer_company_required"})
         with db.transaction() as conn:
             # Per-user serialization also bounds concurrent pending jobs.
             conn.execute("SELECT id FROM users WHERE id=%s FOR UPDATE", (current["id"],))
@@ -324,7 +363,8 @@ def create_app(settings=None, database=None):
             if body.material_ids:
                 count = conn.execute(
                     """SELECT count(*) AS n FROM materials WHERE id=ANY(%s)
-                    AND material_type='news' AND processing_status='ready'""",
+                    AND """
+                    + material_filter(settings.data_mode),
                     (body.material_ids,),
                 ).fetchone()["n"]
                 if count != len(set(body.material_ids)):
@@ -366,8 +406,8 @@ def create_app(settings=None, database=None):
             for i in db.all(
                 """SELECT i.id FROM insights i
             JOIN analysis_runs r ON r.id=i.run_id WHERE r.job_id=%s
-            AND EXISTS(SELECT 1 FROM analysis_jobs WHERE id=%s AND status='completed')""",
-                (job_id, job_id),
+            AND r.status='completed' ORDER BY i.id""",
+                (job_id,),
             )
         ]
         return row
@@ -377,7 +417,7 @@ def create_app(settings=None, database=None):
         args = (current["id"], current["org_id"], current["role"])
         base = """ FROM insights i JOIN analysis_runs r ON r.id=i.run_id
             JOIN analysis_jobs j ON j.id=r.job_id WHERE j.user_id=%s AND r.organization_id=%s
-            AND r.target_role=%s AND j.status='completed' """
+            AND r.target_role=%s AND r.status='completed' """
         items = db.all(
             """SELECT i.id,i.title,i.relevance_score,i.confidence,i.created_at,
             i.primary_material_id,i.payload->>'generation_mode' AS generation_mode,

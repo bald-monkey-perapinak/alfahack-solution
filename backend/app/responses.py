@@ -39,6 +39,23 @@ class OrganizationPage(BaseModel):
     offset: int
 
 
+class MaterialOutcome(BaseModel):
+    material_id: int
+    status: Literal["pending", "running", "completed", "skipped", "failed"]
+    error_code: str | None = None
+    retries: int = 0
+
+
+class JobSummary(BaseModel):
+    total: int | None = None
+    processed: int = 0
+    created: int = 0
+    skipped: int = 0
+    failed: int = 0
+    retrying: bool = False
+    materials: list[MaterialOutcome] = Field(default_factory=list)
+
+
 class JobView(BaseModel):
     id: UUID
     status: Literal["pending", "running", "completed", "failed"]
@@ -46,7 +63,7 @@ class JobView(BaseModel):
     created_at: datetime
     finished_at: datetime | None
     error_code: str | None
-    summary: dict[str, Any]
+    summary: JobSummary
     insight_ids: list[int] = Field(default_factory=list)
 
 

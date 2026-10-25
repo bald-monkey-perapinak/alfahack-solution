@@ -12,7 +12,7 @@
 from __future__ import annotations
 
 import json
-from dataclasses import dataclass, field, asdict
+from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from typing import Any
 
@@ -157,7 +157,10 @@ class EventRanker:
         total_impact = impact.get("total_impact", 0.0)
         factor_impacts = impact.get("factor_impacts", {})
 
-        relevance = self._relevance(total_impact)
+        # A strong exposure can matter even when impacts in opposite directions
+        # cancel in the net index. Materiality below describes that net index.
+        strongest_factor = max((abs(value) for value in factor_impacts.values()), default=abs(total_impact))
+        relevance = self._relevance(strongest_factor)
         materiality = self._materiality(total_impact)
         urgency = self._urgency(horizon)
         role_fit = self._role_fit(factor_impacts, user.role)

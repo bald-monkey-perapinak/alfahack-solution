@@ -130,7 +130,7 @@ class Worker:
                     run_id = conn.execute(
                         """INSERT INTO analysis_runs
                         (organization_id,target_role,status,model_name,pipeline_version,company_context,job_id)
-                        VALUES(%s,%s,'running',%s,'integrated-v1',%s,%s) RETURNING id""",
+                        VALUES(%s,%s,'running',%s,'evidence-v2',%s,%s) RETURNING id""",
                         (
                             org["id"],
                             job["target_role"],
@@ -220,6 +220,16 @@ class Worker:
                                 """INSERT INTO insight_evidence
                                 (insight_id,material_id,section,claim,quote) VALUES(%s,%s,'bank_view',%s,%s)""",
                                 (insight["id"], b["material_id"], b["quote"], b["quote"]),
+                            )
+                        for other in payload.get("evidence", [])[1:]:
+                            conn.execute(
+                                """INSERT INTO insight_evidence
+                                (insight_id,material_id,section,claim,quote)
+                                VALUES(%s,%s,'facts',%s,%s)""",
+                                (
+                                    insight["id"], other["material_id"],
+                                    "Дополнительный источник: " + other["kind"], other["quote"],
+                                ),
                             )
                         summary["created"] += 1
                         outcome["status"] = "completed"

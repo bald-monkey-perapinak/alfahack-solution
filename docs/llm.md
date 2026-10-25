@@ -1,0 +1,73 @@
+# LLM-шлюз хакатона
+
+Параметры взяты из [инструкции организаторов](https://docs.google.com/document/d/1ly8GsI_-oPnCQWvtZ4nGevnnDP2MGYIfpn2zOUFxZ_4/mobilebasic).
+
+Основной endpoint: `https://changellenge.up.railway.app/v1`.
+Резервный для российских хостингов: `https://api.alfahack-gateway26.ru/v1`.
+При необходимости изменить LLM_BASE_URL вручную; автоматической отправки
+запросов на другой хост нет.
+
+Разрешённые deployment ID:
+
+- google/gemma-4-26b-a4b-it
+- z-ai/glm-5.3-flash
+- qwen/qwen3.6-35b-a3b
+- deepseek/deepseek-v4.1-flash
+- qwen/qwen3-vl-30b-a3b-instruct
+- moonshotai/kimi-k2.6
+
+Для текущей интеграции выбран qwen/qwen3.6-35b-a3b. Ключ хранится только в
+локальном .env с правами 0600; в исходниках и .env.example ключа нет.
+
+```dotenv
+LLM_MODE=live
+LLM_ALLOW_EXTERNAL=true
+LLM_BASE_URL=https://changellenge.up.railway.app/v1
+LLM_API_KEY=<private-key>
+LLM_MODEL=qwen/qwen3.6-35b-a3b
+LLM_ALLOWED_MODELS=["qwen/qwen3.6-35b-a3b"]
+LLM_REASONING_EFFORT=none
+LLM_MAX_TOKENS=3000
+LLM_TIMEOUT_SECONDS=90
+```
+
+Клиент требует JSON object и передаёт reasoning.effort=none. На живой проверке
+Qwen без этой настройки потратил весь прежний лимит на reasoning и вернул
+пустой content с finish_reason=length. Такой ответ теперь явно отклоняется.
+Внутренние рассуждения не сохраняются в журнале и не возвращаются клиенту.
+
+Проверка подключения одним небольшим платным запросом:
+
+```sh
+uv run python -m scripts.check_llm
+```
+
+При работе через Compose после изменения .env/кода пересоздать API и worker:
+
+```sh
+docker compose up --build -d api worker
+```
+
+Изменение .env не меняет уже запущенный процесс автоматически.
+
+Общий лимит команды — 500 рублей в день на все модели. По инструкции бюджет
+обновляется в 03:00 МСК. При исчерпании бюджета автоматических повторов нет.
+
+Коды ошибок в статусе задания и ответе на вопрос:
+
+| Код | Значение |
+| --- | --- |
+| llm_budget_exceeded | Бюджет исчерпан; дождаться обновления |
+| llm_auth_failed | Ключ не принят / доступ запрещён |
+| llm_rate_limited | Превышена частота запросов |
+| llm_timeout | Провайдер не ответил за заданное время |
+| llm_output_truncated | Лимит вывода исчерпан до завершения ответа |
+| llm_empty_response | Нет текстового ответа |
+| llm_invalid_json / llm_invalid_response | Ответ не соответствует протоколу |
+| llm_transport_error / llm_provider_unavailable | Ошибка сети или провайдера |
+| llm_request_failed | Провайдер отклонил параметры запроса |
+
+Ни один код не содержит сырой ответ провайдера, ключ или промпт. При сбое
+нет скрытого перехода на offline-ответ, который можно принять за живую генерацию.
+Живой сценарий проверяется с синтетическим профилем; реальные email, имена,
+идентификаторы компаний, выручка и платежи в LLM-контекст не включаются.

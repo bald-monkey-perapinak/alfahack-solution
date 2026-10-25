@@ -1,0 +1,22 @@
+{
+  "event_id": "evt_rate_14",
+  "event_type": "central_bank_rate_decision",
+  "title": "ЦБ сохранил ключевую ставку на уровне 14%, риторика стала жёстче",
+  "datetime": "2026-09-11",
+  "shocks": [
+    {
+      "factor": "key_rate",
+      "direction": 1.0,
+      "magnitude": 0.6,
+      "horizon": "quarter",
+      "source": "event"
+    },
+    {
+      "factor": "inflation",
+      "direction": 1.0,
+      "magnitude": 0.3,
+      "horizon": "quarter",
+      "source": "event"
+    }
+  ]
+}

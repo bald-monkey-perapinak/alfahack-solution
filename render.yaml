@@ -11,7 +11,7 @@ services:
     runtime: docker
     dockerfilePath: ./Dockerfile
     dockerContext: .
-    preDeployCommand: python -m backend.manage migrate && python -m backend.bootstrap
+    dockerCommand: python -m backend.serve
     healthCheckPath: /health/ready
     envVars:
       - key: DATABASE_URL
@@ -26,22 +26,3 @@ services:
         value: offline
       - key: ALLOWED_ORIGINS
         sync: false
-
-  - type: worker
-    name: alfa-hack-worker
-    plan: 0.5c-512mb
-    runtime: docker
-    dockerfilePath: ./Dockerfile
-    dockerContext: .
-    dockerCommand: python -m backend.worker
-    envVars:
-      - key: DATABASE_URL
-        fromDatabase:
-          name: alfa-hack-db
-          property: connectionString
-      - key: DATA_MODE
-        value: organizers
-      - key: ORGANIZER_DATA_DIR
-        value: /app/ml/data
-      - key: LLM_MODE
-        value: offline

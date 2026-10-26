@@ -2,11 +2,12 @@ databases:
   - name: alfa-hack-db
     databaseName: alfahack
     user: alfahack
-    plan: 256mb
+    plan: free
 
 services:
   - type: web
     name: alfa-hack-api
+    plan: free
     runtime: docker
     dockerfilePath: ./Dockerfile
     dockerContext: .
@@ -28,6 +29,7 @@ services:
 
   - type: worker
     name: alfa-hack-worker
+    plan: 0.5c-512mb
     runtime: docker
     dockerfilePath: ./Dockerfile
     dockerContext: .

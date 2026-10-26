@@ -21,7 +21,7 @@ services:
     env_file: .env
     environment: &app-environment
       DATABASE_URL: postgresql://${POSTGRES_USER:-alfahack}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-alfahack}
-      DATA_MODE: ${DATA_MODE:-organizers}
+      DATA_MODE: ${DATA_MODE:-demo}
       ORGANIZER_DATA_DIR: /private/organizer
     command: ["python", "-m", "backend.manage", "migrate"]
     depends_on:
@@ -39,8 +39,6 @@ services:
         source: ./ml/data
         target: /private/organizer
         read_only: true
-        bind:
-          create_host_path: false
     depends_on:
       migrate:
         condition: service_completed_successfully

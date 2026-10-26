@@ -573,6 +573,53 @@ def _analyze_material(db, org, profile, user, material, parameters, llm, trace_i
         if not source or b["quote"] not in source["body"]:
             raise ValueError("Invalid bank citation")
     log("insight.verify", verification)
+    if verification["status"] != "passed" and llm.settings.llm_mode == "live":
+        previous_issues = verification["issues"]
+        try:
+            repaired = Generated.model_validate(
+                llm.json(
+                    "Исправь только перечисленные проблемы проверки бизнес-инсайта. Верни JSON с headline, "
+                    "interpretation, risks, opportunities и actions. Используй только переданные источники; "
+                    "не добавляй факты, числа, причинность или продукты, которых нет в материалах. "
+                    "Сохрани явное разделение фактов, позиции банка и гипотезы.",
+                    {
+                        "draft": generated.model_dump(),
+                        "verification_issues": verification["issues"],
+                        "verification_checks": verification["checks"],
+                        "primary_source": {
+                            "title": material["title"],
+                            "published_at": material["published_at"].isoformat()
+                            if material["published_at"]
+                            else None,
+                            "text": material["body"][:12000],
+                        },
+                        "bank_sources": [
+                            {"title": b["title"], "quote": b["quote"][:1000]} for b in bank
+                        ],
+                        "other_sources": [
+                            {"title": p["title"], "quote": p["quote"][:700], "kind": p["kind"]}
+                            for p in perspectives[:4]
+                        ],
+                        "role": user["role"],
+                        "company_industry": org["industry"],
+                    },
+                )
+            )
+        except (LLMUnavailable, ValidationError):
+            raise AnalysisFailure(steps, "insight_repair_failed") from None
+        insight["headline"] = repaired.headline
+        insight["channels"]["ai_conclusion"] = [
+            {"text": repaired.interpretation, "refs": relevant_factors}
+        ]
+        insight["actions"] = [
+            {"type": "review", "label": "рекомендация AI", "rationale": action, "priority": i + 1}
+            for i, action in enumerate(repaired.actions)
+        ]
+        insight["risks"] = repaired.risks
+        insight["opportunities"] = repaired.opportunities
+        generated = repaired
+        verification = InsightVerifier(source_text=material["body"]).verify(insight).to_dict()
+        log("insight.repair", {"previous_issues": previous_issues, "verification": verification})
     if verification["status"] != "passed":
         raise AnalysisFailure(steps, "insight_verification_failed")
     insight.update(

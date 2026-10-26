@@ -1,5 +1,5 @@
 /** Browser adapter: tokens remain in memory. Never send LLM/operator keys to the browser. */
-export type Role = 'cfo' | 'ceo' | 'treasurer' | 'chief_accountant' | 'owner';
+export type Role = 'cfo' | 'ceo' | 'treasurer' | 'chief_accountant' | 'owner' | 'other_executive';
 export interface Page<T> { items: T[]; total: number; limit: number; offset: number }
 export interface Organization { id: number; name: string; synthetic_u: string; industry: string | null; region: string | null }
 export interface User { id: number; name: string; email: string; role: Role; org_id: number }

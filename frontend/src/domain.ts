@@ -4,6 +4,7 @@ export const roleOptions = [
   { key: 'treasurer', content: 'Казначей' },
   { key: 'chief_accountant', content: 'Главный бухгалтер' },
   { key: 'owner', content: 'Собственник' },
+  { key: 'other_executive', content: 'Другой руководитель / ключевой сотрудник' },
 ] as const;
 export type Role = (typeof roleOptions)[number]['key'];
 export type Route = { page: 'login' | 'register' | 'analysis' | 'news' | 'profile' | 'detail'; id?: string };

@@ -15,6 +15,7 @@ class Role(StrEnum):
     treasurer = "treasurer"
     chief_accountant = "chief_accountant"
     owner = "owner"
+    other_executive = "other_executive"
 
 
 class Register(Input):

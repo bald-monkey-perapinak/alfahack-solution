@@ -14,6 +14,7 @@ class Settings(BaseSettings):
         "postgresql://alfahack:local-development-only@localhost:5432/alfahack"
     )
     allowed_origins: list[str] = ["http://localhost:3000", "http://localhost:5173"]
+    news_feed_urls: list[str] = []
     ingest_api_key: SecretStr = SecretStr("")
     data_mode: Literal["demo", "organizers"] = "demo"
     organizer_data_dir: str = str(ROOT / "ml/data")

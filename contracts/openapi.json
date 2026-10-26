@@ -1847,7 +1847,8 @@
           "ceo",
           "treasurer",
           "chief_accountant",
-          "owner"
+          "owner",
+          "other_executive"
         ],
         "title": "Role"
       },

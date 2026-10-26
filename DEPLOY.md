@@ -1,0 +1,23 @@
+# Деплой на Netlify и Render
+
+В репозитории подготовлены `netlify.toml` и `render.yaml`. Фронтенд публикуется на Netlify; API, worker и PostgreSQL запускаются на Render. Blueprint использует демо-данные и offline-режим LLM по умолчанию.
+
+## 1. Render: API, worker и база
+
+1. Запушьте репозиторий в GitHub/GitLab.
+2. В Render выберите **New → Blueprint**, подключите репозиторий с `render.yaml` и создайте ресурсы. Подтвердите тариф PostgreSQL и сервисов.
+3. Для `alfa-hack-api` задайте переменную `ALLOWED_ORIGINS` как JSON-массив с origin Netlify, например `["https://имя-сайта.netlify.app"]`. На первом проходе можно временно указать `[]`, а после создания сайта Netlify заменить значение и дождаться redeploy API.
+4. Проверьте `https://<имя-api>.onrender.com/health/ready` — ожидается HTTP 200.
+
+Render передаёт API и worker внутренний `DATABASE_URL`; миграции и demo seed выполняются перед запуском API. Worker обрабатывает задания из той же базы. Секреты не нужно помещать во frontend.
+
+## 2. Netlify: frontend
+
+1. Создайте сайт через **Add new site → Import an existing project** и выберите тот же репозиторий. Netlify подхватит `netlify.toml`: каталог сборки `frontend`, команда `pnpm build`, публикация `frontend/dist`.
+2. В настройках сайта → **Environment variables** добавьте `VITE_API_BASE_URL` со значением `https://<имя-api>.onrender.com` (без завершающего `/`).
+3. Запустите новый deploy. SPA-переходы настроены правилом перенаправления в `netlify.toml`.
+4. Убедитесь, что origin сайта Netlify в точности указан в `ALLOWED_ORIGINS` Render. Для preview deploy можно отдельно добавить его URL, если он должен обращаться к API.
+
+## Данные и ограничения
+
+В blueprint включён синтетический demo seed. Частные материалы из `ml/data` не включаются в образ Docker и автоматически на Render не появятся; для них потребуется отдельная защищённая загрузка и импорт. Для сохранения базы используйте постоянный тариф PostgreSQL, а не временную тестовую базу. Если включите live LLM, задайте секреты только в переменных Render и отдельно проверьте разрешённые модели и настройки приватности.

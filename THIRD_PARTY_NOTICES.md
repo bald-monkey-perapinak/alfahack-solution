@@ -12,6 +12,8 @@
 | psycopg / psycopg-pool / psycopg-binary | PostgreSQL; binary включает компоненты libpq |
 | pandas / NumPy | Профилирование компаний и аудит CSV |
 | HTTPX | Клиент разрешённого LLM endpoint и HTTP-проверки |
+| LLM хакатона | Только Gemma 4 26B A4B, GLM-5.3-Flash, Qwen3.6 35B A3B, DeepSeek-V4.1-Flash, Qwen3-VL-30B-A3B-Instruct, Kimi-K2.6; runtime ограничивает выбор фиксированным allowlist |
+| Публичные RSS/Atom-источники | Используются только после явного указания HTTPS URL оператором в `NEWS_FEED_URLS`; права использования и пригодность источника проверяет оператор |
 | PostgreSQL | Хранилище и долговечная очередь заданий |
 | pytest / Ruff | Тестирование и статические проверки |
 | uv | Фиксация и установка зависимостей |

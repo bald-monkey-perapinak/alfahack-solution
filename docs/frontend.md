@@ -10,7 +10,7 @@
 1. `GET /api/v1/organizations?q=...` — публичный обезличенный каталог для демо.
 2. `GET /api/v1/roles` — роли для селектора.
 3. `POST /api/v1/auth/register` — email, пароль (10–128 символов), имя,
-   role (`cfo`, `ceo`, `treasurer`, `chief_accountant`, `owner`), organization_id.
+   role (`cfo`, `ceo`, `treasurer`, `chief_accountant`, `owner`, `other_executive`), organization_id.
    Возвращает access_token. Повторный вход: `POST /api/v1/auth/login`.
 4. На последующие запросы добавить `Authorization: Bearer <access_token>`.
 5. `GET /api/v1/me/organization` — профиль и оценённые экспозиции.
@@ -84,6 +84,10 @@ const feed = await api.feed();
 `POST /api/v1/ingestion/news` предназначен для оператора сбора новостей, а не
 для браузера. Требует секретный заголовок X-Ingest-Key. Этот ключ нельзя
 встраивать в JS bundle. Пример тела находится в `contracts/ingest-example.json`.
+RSS/Atom-сборщик запускается отдельно оператором через
+`python -m backend.manage collect-news`; в `NEWS_FEED_URLS` передаются только
+разрешённые командой HTTPS URL. Периодический запуск должен быть настроен
+оператором планировщика.
 
 
 В `DATA_MODE=organizers` каталог содержит только исходные профили U_…;

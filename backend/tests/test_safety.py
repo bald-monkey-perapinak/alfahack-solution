@@ -57,8 +57,44 @@ def test_live_requires_explicit_opt_in_and_allowlist():
                 llm_base_url="https://example.test/v1",
                 llm_api_key=SecretStr("test"),
                 llm_model="unapproved",
+                llm_allowed_models=["unapproved"],
             )
         )
+    with pytest.raises(ValueError, match="explicitly included"):
+        LLM(
+            Settings(
+                _env_file=None,
+                llm_mode="live",
+                llm_allow_external=True,
+                llm_base_url="https://example.test/v1",
+                llm_api_key=SecretStr("test"),
+                llm_model="qwen/qwen3.6-35b-a3b",
+            )
+        )
+
+
+@pytest.mark.parametrize(
+    "model",
+    [
+        "google/gemma-4-26b-a4b-it",
+        "z-ai/glm-5.3-flash",
+        "qwen/qwen3.6-35b-a3b",
+        "deepseek/deepseek-v4.1-flash",
+        "qwen/qwen3-vl-30b-a3b-instruct",
+        "moonshotai/kimi-k2.6",
+    ],
+)
+def test_every_hackathon_model_can_be_explicitly_enabled(model):
+    settings = Settings(
+        _env_file=None,
+        llm_mode="live",
+        llm_allow_external=True,
+        llm_base_url="https://example.test/v1",
+        llm_api_key=SecretStr("test"),
+        llm_model=model,
+        llm_allowed_models=[model],
+    )
+    assert LLM(settings).settings.llm_model == model
 
 
 def test_provider_failure_does_not_leak_secret(monkeypatch):
@@ -70,8 +106,8 @@ def test_provider_failure_does_not_leak_secret(monkeypatch):
         llm_allow_external=True,
         llm_base_url="https://example.test/v1",
         llm_api_key=SecretStr("secret-for-test"),
-        llm_model="approved-fixture",
-        llm_allowed_models=["approved-fixture"],
+        llm_model="qwen/qwen3.6-35b-a3b",
+        llm_allowed_models=["qwen/qwen3.6-35b-a3b"],
     )
 
     def fail(*args, **kwargs):

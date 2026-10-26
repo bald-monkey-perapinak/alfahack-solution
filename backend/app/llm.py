@@ -12,6 +12,18 @@ class LLMUnavailable(RuntimeError):
         self.code = code
 
 
+APPROVED_LLM_MODELS = frozenset(
+    {
+        "google/gemma-4-26b-a4b-it",
+        "z-ai/glm-5.3-flash",
+        "qwen/qwen3.6-35b-a3b",
+        "deepseek/deepseek-v4.1-flash",
+        "qwen/qwen3-vl-30b-a3b-instruct",
+        "moonshotai/kimi-k2.6",
+    }
+)
+
+
 class LLM:
     def __init__(self, settings):
         self.settings = settings
@@ -25,8 +37,10 @@ class LLM:
                 raise ValueError("Live LLM requires HTTPS")
             if not settings.llm_api_key.get_secret_value():
                 raise ValueError("LLM_API_KEY required")
-            if not settings.llm_model or settings.llm_model not in settings.llm_allowed_models:
-                raise ValueError("LLM_MODEL must be explicitly included in LLM_ALLOWED_MODELS")
+            if settings.llm_model not in APPROVED_LLM_MODELS:
+                raise ValueError("LLM_MODEL is not approved for this hackathon")
+            if settings.llm_model not in settings.llm_allowed_models:
+                raise ValueError("LLM_MODEL must also be explicitly included in LLM_ALLOWED_MODELS")
 
     def json(self, system: str, data: dict) -> dict:
         transient = {"llm_timeout", "llm_transport_error", "llm_rate_limited", "llm_provider_unavailable"}

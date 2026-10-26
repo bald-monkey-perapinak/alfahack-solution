@@ -161,6 +161,7 @@ def create_app(settings=None, database=None):
                     "treasurer": "Казначей",
                     "chief_accountant": "Главный бухгалтер",
                     "owner": "Собственник",
+                    "other_executive": "Другой руководитель / ключевой сотрудник",
                 }.items()
             ]
         }

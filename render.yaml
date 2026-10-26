@@ -1,0 +1,41 @@
+databases:
+  - name: alfa-hack-db
+    databaseName: alfahack
+    user: alfahack
+    plan: 256mb
+
+services:
+  - type: web
+    name: alfa-hack-api
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    preDeployCommand: python -m backend.manage migrate && python -m backend.bootstrap
+    healthCheckPath: /health/ready
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: alfa-hack-db
+          property: connectionString
+      - key: DATA_MODE
+        value: demo
+      - key: LLM_MODE
+        value: offline
+      - key: ALLOWED_ORIGINS
+        sync: false
+
+  - type: worker
+    name: alfa-hack-worker
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    dockerCommand: python -m backend.worker
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: alfa-hack-db
+          property: connectionString
+      - key: DATA_MODE
+        value: demo
+      - key: LLM_MODE
+        value: offline

@@ -208,8 +208,8 @@ def test_live_generation_sends_minimal_context(authorized, monkeypatch):
             "llm_allow_external": True,
             "llm_base_url": "https://example.test/v1",
             "llm_api_key": SecretStr("test-only-key"),
-            "llm_model": "approved-fixture",
-            "llm_allowed_models": ["approved-fixture"],
+            "llm_model": "qwen/qwen3.6-35b-a3b",
+            "llm_allowed_models": ["qwen/qwen3.6-35b-a3b"],
         }
     )
     sent = []

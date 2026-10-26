@@ -6,7 +6,7 @@ import hashlib
 import json
 import re
 from collections import defaultdict
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 import psycopg
@@ -15,6 +15,7 @@ from backend.app.analytics import ingest_articles
 from backend.app.config import ROOT, get_settings
 from backend.app.db import Database
 from backend.app.models import Article
+from backend.news_collector import collect_feeds
 
 
 def migrate(url, baseline=False):
@@ -236,14 +237,98 @@ def seed_demo(db):
     return result
 
 
+def quality_report(db, since):
+    jobs = db.all(
+        """SELECT status, count(*) AS count,
+                  coalesce(sum(CASE WHEN summary->>'total' ~ '^[0-9]+$' THEN (summary->>'total')::int ELSE 0 END),0) AS materials,
+                  coalesce(sum(CASE WHEN summary->>'created' ~ '^[0-9]+$' THEN (summary->>'created')::int ELSE 0 END),0) AS created,
+                  coalesce(sum(CASE WHEN summary->>'skipped' ~ '^[0-9]+$' THEN (summary->>'skipped')::int ELSE 0 END),0) AS skipped,
+                  coalesce(sum(CASE WHEN summary->>'failed' ~ '^[0-9]+$' THEN (summary->>'failed')::int ELSE 0 END),0) AS failed_materials
+           FROM analysis_jobs WHERE created_at >= %s GROUP BY status ORDER BY status""",
+        (since,),
+    )
+    insights = db.one(
+        """SELECT count(*) AS total,
+                  count(*) FILTER (WHERE bank_view IS NOT NULL) AS with_bank_view,
+                  count(*) FILTER (WHERE EXISTS (
+                    SELECT 1 FROM insight_evidence e WHERE e.insight_id=insights.id
+                  )) AS with_citations
+           FROM insights WHERE created_at >= %s""",
+        (since,),
+    )
+    verification = db.one(
+        """SELECT count(*) AS attempts,
+                  count(*) FILTER (WHERE coalesce(
+                    step#>>'{result,status}',step#>>'{result,verification,status}')='passed') AS passed,
+                  count(*) FILTER (WHERE coalesce(
+                    step#>>'{result,status}',step#>>'{result,verification,status}')='warning') AS warning,
+                  count(*) FILTER (WHERE coalesce(
+                    step#>>'{result,status}',step#>>'{result,verification,status}')='failed') AS failed
+           FROM analysis_runs r
+           CROSS JOIN LATERAL jsonb_array_elements(r.steps) AS item(step)
+           WHERE r.started_at >= %s AND step->>'tool' IN ('insight.verify','insight.repair')""",
+        (since,),
+    )
+    feedback = db.all(
+        """SELECT rating,count(*) AS count FROM insight_feedback
+           WHERE updated_at >= %s GROUP BY rating ORDER BY rating""",
+        (since,),
+    )
+    modes = db.all(
+        """SELECT coalesce(payload->>'generation_mode','unknown') AS mode,count(*) AS count
+           FROM insights WHERE created_at >= %s GROUP BY mode ORDER BY mode""",
+        (since,),
+    )
+    total_insights = insights["total"]
+    return {
+        "since": since.isoformat(),
+        "job_status": {row["status"]: row["count"] for row in jobs},
+        "materials": {
+            field: sum(row[key] for row in jobs)
+            for field, key in (
+                ("submitted", "materials"),
+                ("created", "created"),
+                ("skipped", "skipped"),
+                ("failed", "failed_materials"),
+            )
+        },
+        "insights": {
+            "total": total_insights,
+            "with_bank_view": insights["with_bank_view"],
+            "with_citations": insights["with_citations"],
+            "bank_view_rate": round(insights["with_bank_view"] / total_insights, 4)
+            if total_insights
+            else None,
+            "citation_coverage": round(insights["with_citations"] / total_insights, 4)
+            if total_insights
+            else None,
+        },
+        "verification": {
+            "attempts": verification["attempts"],
+            "passed": verification["passed"],
+            "warning": verification["warning"],
+            "failed": verification["failed"],
+            "pass_rate": round(verification["passed"] / verification["attempts"], 4)
+            if verification["attempts"]
+            else None,
+        },
+        "generation_modes": {row["mode"]: row["count"] for row in modes},
+        "feedback": {row["rating"]: row["count"] for row in feedback},
+    }
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "command", choices=["migrate", "seed-demo", "import-data", "import-bank", "export-openapi"]
+        "command",
+        choices=[
+            "migrate", "seed-demo", "import-data", "import-bank", "collect-news", "quality-report", "export-openapi"
+        ],
     )
     parser.add_argument("--baseline-001", action="store_true")
     parser.add_argument("--folder", type=Path)
     parser.add_argument("--with-payments", action="store_true")
+    parser.add_argument("--days", type=int, default=30)
     args = parser.parse_args()
     settings = get_settings()
     if args.command == "export-openapi":
@@ -254,10 +339,18 @@ def main():
     if args.command == "migrate":
         migrate(settings.database_url.get_secret_value(), args.baseline_001)
         return
+    if args.days < 1 or args.days > 3650:
+        parser.error("--days must be between 1 and 3650")
     db = Database(settings.database_url.get_secret_value())
     db.open()
     try:
-        if args.command == "seed-demo":
+        if args.command == "quality-report":
+            result = quality_report(db, datetime.now(timezone.utc) - timedelta(days=args.days))
+        elif args.command == "collect-news":
+            articles, failures = collect_feeds(settings.news_feed_urls)
+            result = ingest_articles(db, articles) if articles else {"inserted_ids": [], "duplicates": 0}
+            result.update({"fetched": len(articles), "feed_failures": failures})
+        elif args.command == "seed-demo":
             result = seed_demo(db)
         elif args.command == "import-bank":
             result = import_bank(db, args.folder or ROOT / "ml/data/alfa-bank_materials_for_large_business")

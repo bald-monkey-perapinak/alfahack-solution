@@ -10,9 +10,25 @@ ROLE_FOCUS = {
     "treasurer": ("ликвидность, валюта и сроки платежей", "Проверить ликвидность, валютную позицию и календарь платежей"),
     "chief_accountant": ("учёт, налоги и регуляторные обязанности", "Проверить применимость изменений к учёту и отчётности"),
     "owner": ("устойчивость бизнеса и долгосрочные решения", "Оценить влияние на устойчивость и инвестиционные планы"),
+    "other_executive": ("приоритеты руководителя и ключевые процессы", "Проверить влияние на приоритеты и ключевые процессы компании"),
 }
 
 _STOP = {"демонстрация", "компания", "компании", "новость", "рынка", "россии", "рост", "снижение"}
+_FACTOR_QUERIES = {
+    "key_rate": "ключевая ставка кредит стоимость заимствований",
+    "inflation": "инфляция цены издержки",
+    "consumption": "потребление спрос продажи",
+    "gdp": "ВВП экономика рост",
+    "labor_market": "рынок труда зарплаты занятость",
+    "bonds": "облигации доходность долговой рынок",
+    "gold": "золото драгоценные металлы",
+    "commodities": "сырье товары commodity цены",
+    "currency": "валюта курс валютный рынок",
+    "sanctions": "санкции ограничения экспорт импорт",
+    "logistics": "логистика перевозки транспорт доставка",
+    "real_estate": "недвижимость строительство аренда",
+    "lending": "кредитование займы финансирование",
+}
 
 
 def role_focus(role):
@@ -107,21 +123,45 @@ class EvidenceOrchestrator:
 
     def run(self, material, shocks, factors):
         state = EvidenceState()
-        for mode, query in (("title", material["title"]), ("body", material["body"][:500])):
-            if mode == "body" and state.bank and len({p["source_name"] for p in state.perspectives}) >= 2:
+        factor_query = " ".join(_FACTOR_QUERIES.get(factor, factor.replace("_", " ")) for factor in factors)
+        queries = [
+            ("title", material["title"]),
+            ("body", material["body"][:500]),
+            ("factors", factor_query or material["title"]),
+        ]
+        for index, (mode, query) in enumerate(queries):
+            independent_sources = len({p["source_name"] for p in state.perspectives})
+            opposing = any(p["kind"] == "opposing_signal" for p in state.perspectives)
+            if index == 1 and state.bank and independent_sources >= 2 and not opposing:
                 break
-            if not state.bank:
-                state.bank = self.bank_search(self.db, query, factors, material["published_at"])
-            if len({p["source_name"] for p in state.perspectives}) < 2:
-                found = retrieve_perspectives(self.db, material, shocks, search_text=query)
-                by_id = {p["material_id"]: p for p in state.perspectives}
-                by_id.update({p["material_id"]: p for p in found})
-                state.perspectives = list(by_id.values())[:6]
+            if index == 2 and state.bank and independent_sources >= 2 and not opposing:
+                break
+
+            bank_found = self.bank_search(self.db, query, factors, material["published_at"])
+            bank_by_id = {item["material_id"]: item for item in state.bank}
+            bank_by_id.update({item["material_id"]: item for item in bank_found})
+            state.bank = list(bank_by_id.values())[:2]
+
+            found = retrieve_perspectives(self.db, material, shocks, search_text=query)
+            by_id = {p["material_id"]: p for p in state.perspectives}
+            by_id.update({p["material_id"]: p for p in found})
+            state.perspectives = list(by_id.values())[:6]
             state.searches.append(
                 {
                     "query_mode": mode,
+                    "reason": (
+                        "initial_search"
+                        if index == 0
+                        else "insufficient_independent_sources_or_bank_evidence"
+                        if not state.bank or len({p["source_name"] for p in state.perspectives}) < 2
+                        else "opposing_signals_require_targeted_search"
+                        if any(p["kind"] == "opposing_signal" for p in state.perspectives)
+                        else "coverage_sufficient"
+                    ),
                     "bank_ids": [b["material_id"] for b in state.bank],
                     "news_ids": [p["material_id"] for p in state.perspectives],
+                    "independent_sources": len({p["source_name"] for p in state.perspectives}),
+                    "opposing_signals": sum(p["kind"] == "opposing_signal" for p in state.perspectives),
                 }
             )
         return state

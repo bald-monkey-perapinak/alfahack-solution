@@ -9,7 +9,8 @@ COPY --chown=app:app backend ./backend
 COPY --chown=app:app ml/src ./ml/src
 COPY --chown=app:app ml/__init__.py ./ml/__init__.py
 COPY --chown=app:app data/samples ./data/samples
-RUN mkdir -p runtime contracts && chown -R app:app runtime contracts
+COPY ml/data.zip /tmp/organizer-data.zip
+RUN python -m backend.package_organizer_data && rm /tmp/organizer-data.zip && mkdir -p runtime contracts && chown -R app:app runtime contracts ml/data
 ENV PATH="/app/.venv/bin:$PATH"
 USER app
 EXPOSE 8000

@@ -18,7 +18,9 @@ services:
           name: alfa-hack-db
           property: connectionString
       - key: DATA_MODE
-        value: demo
+        value: organizers
+      - key: ORGANIZER_DATA_DIR
+        value: /app/ml/data
       - key: LLM_MODE
         value: offline
       - key: ALLOWED_ORIGINS
@@ -36,6 +38,8 @@ services:
           name: alfa-hack-db
           property: connectionString
       - key: DATA_MODE
-        value: demo
+        value: organizers
+      - key: ORGANIZER_DATA_DIR
+        value: /app/ml/data
       - key: LLM_MODE
         value: offline

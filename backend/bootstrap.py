@@ -1,4 +1,4 @@
-"""Import organizer files through a private read-only mount; never bake them into images."""
+"""Import organizer files from the configured data directory."""
 
 import hashlib
 import json
@@ -39,7 +39,7 @@ def bootstrap(db, folder: Path, mode="organizers"):
             return dict(existing["statistics"], unchanged=True)
         statistics = import_companies(db, companies / "df_Uid_data_hack.csv")
         import_links(db, companies)
-        import_payments(db, companies)
+        statistics.update(import_payments(db, companies))
         statistics.update(import_bank(db, bank))
         statistics["payment_connections"] = rebuild_payment_connections(db)
         statistics["payment_records"] = db.one("SELECT count(*) AS n FROM payment_flows")["n"]

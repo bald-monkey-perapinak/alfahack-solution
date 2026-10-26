@@ -18,7 +18,7 @@ from psycopg.types.json import Jsonb
 from .analytics import ingest_articles, make_profile
 from .body_limit import BodyLimitMiddleware
 from .config import get_settings
-from .connections import NOTE, build_context, neighbors
+from .connections import build_context, dataset_note, neighbors
 from .data_mode import company_filter, material_filter
 from .db import Database
 from .llm import LLM, LLMUnavailable
@@ -280,7 +280,7 @@ def create_app(settings=None, database=None):
 
     @app.get("/api/v1/me/counterparties", tags=["Profile"])
     def counterparties(limit: int = Query(20, ge=1, le=100), current=Depends(user)):
-        return {"items": neighbors(db, current["org_id"], limit), "note": NOTE}
+        return {"items": neighbors(db, current["org_id"], limit), "note": dataset_note()}
 
     @app.get("/api/v1/me/connections", tags=["Profile"])
     def connections(max_depth: int = Query(3, ge=1, le=4), current=Depends(user)):

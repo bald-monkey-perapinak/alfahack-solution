@@ -8,9 +8,15 @@ import time
 
 
 def main() -> int:
-    subprocess.run([sys.executable, "-m", "backend.manage", "migrate"], check=True)
-    subprocess.run([sys.executable, "-m", "backend.bootstrap"], check=True)
-    worker = subprocess.Popen([sys.executable, "-m", "backend.worker"])
+    stopping = False
+
+    def request_stop(_signum, _frame):
+        nonlocal stopping
+        stopping = True
+
+    signal.signal(signal.SIGTERM, request_stop)
+    signal.signal(signal.SIGINT, request_stop)
+
     api = subprocess.Popen(
         [
             sys.executable,
@@ -24,24 +30,27 @@ def main() -> int:
             "--no-access-log",
         ]
     )
-    children = (worker, api)
-    stopping = False
-
-    def request_stop(_signum, _frame):
-        nonlocal stopping
-        stopping = True
-
-    signal.signal(signal.SIGTERM, request_stop)
-    signal.signal(signal.SIGINT, request_stop)
+    initializer = subprocess.Popen([sys.executable, "-m", "backend.initialize"])
+    worker = None
+    children = [api, initializer]
     try:
         while not stopping:
             api_code = api.poll()
             if api_code is not None:
                 return api_code
-            worker_code = worker.poll()
-            if worker_code is not None:
-                print(f"Queue worker exited unexpectedly with code {worker_code}", flush=True)
-                return worker_code or 1
+            init_code = initializer.poll()
+            if init_code is not None:
+                if init_code != 0:
+                    print(f"Database initialization exited with code {init_code}", flush=True)
+                    return init_code
+                if worker is None:
+                    worker = subprocess.Popen([sys.executable, "-m", "backend.worker"])
+                    children.append(worker)
+            if worker is not None:
+                worker_code = worker.poll()
+                if worker_code is not None:
+                    print(f"Queue worker exited unexpectedly with code {worker_code}", flush=True)
+                    return worker_code or 1
             time.sleep(0.5)
         return 0
     finally:

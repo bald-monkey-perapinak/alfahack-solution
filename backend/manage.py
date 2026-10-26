@@ -1,7 +1,6 @@
 """Local-only database management; no network scraping or implicit external AI calls."""
 
 import argparse
-import csv
 import hashlib
 import json
 import re
@@ -16,6 +15,7 @@ from backend.app.config import ROOT, get_settings
 from backend.app.db import Database
 from backend.app.models import Article
 from backend.news_collector import collect_feeds
+from backend.payment_sampling import csv_rows, select_payment_rows
 
 
 def migrate(url, baseline=False):
@@ -58,13 +58,6 @@ def migrate(url, baseline=False):
                 conn.execute(sql)
             conn.execute("INSERT INTO schema_migrations(name,checksum) VALUES(%s,%s)", (path.name, digest))
             print("Applied", path.name)
-
-
-def csv_rows(path):
-    with path.open(encoding="utf-8-sig", newline="") as stream:
-        sample = stream.read(8192)
-        stream.seek(0)
-        yield from csv.DictReader(stream, dialect=csv.Sniffer().sniff(sample, delimiters=";,\t"))
 
 
 def import_companies(db, path):
@@ -144,23 +137,34 @@ def import_payments(db, folder):
     with path.open("rb") as stream:
         digest = hashlib.file_digest(stream, "sha256").hexdigest()
     ref = path.name + ":sha256:" + digest
+    limit = get_settings().payment_import_limit_per_direction
+    selected_rows, total_rows = select_payment_rows(path, limit) if limit else (None, 0)
     with db.transaction() as conn:
+        # Also releases storage left by a previous interrupted import on small free databases.
+        conn.execute("TRUNCATE payment_flows")
         conn.execute(
             "CREATE TEMP TABLE flow_import(payer TEXT,beneficiary TEXT,amount NUMERIC,cnt BIGINT,row_no BIGINT) ON COMMIT DROP"
         )
         with conn.cursor().copy("COPY flow_import FROM STDIN") as copy:
             for number, row in enumerate(csv_rows(path), 1):
+                if selected_rows is not None and number not in selected_rows:
+                    continue
+                if selected_rows is None:
+                    total_rows = number
                 copy.write_row((row["PAYER"], row["BENEFICIARY"], row["PAY_AMT"], row["PAY_CNT"], number))
         conn.execute("""INSERT INTO organizations(synthetic_u)
             SELECT payer FROM flow_import UNION SELECT beneficiary FROM flow_import ON CONFLICT DO NOTHING""")
-        # Versioned import replaces the previous snapshot atomically, not in addition to it.
-        conn.execute("DELETE FROM payment_flows WHERE source_ref LIKE %s", (path.name + ":sha256:%",))
         conn.execute(
             """INSERT INTO payment_flows(payer_id,beneficiary_id,amount,payment_count,source_ref,source_row)
             SELECT p.id,b.id,f.amount,f.cnt,%s,f.row_no FROM flow_import f
             JOIN organizations p ON p.synthetic_u=f.payer JOIN organizations b ON b.synthetic_u=f.beneficiary""",
             (ref,),
         )
+    return {
+        "payment_rows_total": total_rows,
+        "payment_rows_retained": len(selected_rows) if selected_rows is not None else total_rows,
+        "payment_import_limit_per_direction": limit,
+    }
 
 
 BANK_METADATA = {

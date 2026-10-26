@@ -18,6 +18,7 @@ class Settings(BaseSettings):
     ingest_api_key: SecretStr = SecretStr("")
     data_mode: Literal["demo", "organizers"] = "demo"
     organizer_data_dir: str = str(ROOT / "ml/data")
+    payment_import_limit_per_direction: int = Field(default=0, ge=0, le=50)
     llm_mode: str = "offline"
     llm_allow_external: bool = False
     llm_base_url: str = ""

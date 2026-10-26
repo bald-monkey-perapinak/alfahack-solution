@@ -1,6 +1,6 @@
 import csv
 
-from backend.manage import import_companies, import_links, import_payments
+from backend.manage import import_companies, import_links, import_payments, select_payment_rows
 
 
 def write_csv(path, columns, rows):
@@ -49,3 +49,22 @@ def test_import_conflicts_stubs_and_payment_snapshot(system, tmp_path):
     assert (
         db.one("SELECT profile_data FROM organizations WHERE synthetic_u='UNKNOWN_B'")["profile_data"] == {}
     )
+
+
+def test_payment_selection_keeps_top_rows_for_each_endpoint(tmp_path):
+    path = tmp_path / "df_Uid_payment_hack.csv"
+    write_csv(
+        path,
+        ["PAYER", "BENEFICIARY", "PAY_AMT", "PAY_CNT"],
+        [
+            {"PAYER": "A", "BENEFICIARY": "B", "PAY_AMT": "10", "PAY_CNT": "1"},
+            {"PAYER": "A", "BENEFICIARY": "C", "PAY_AMT": "100", "PAY_CNT": "1"},
+            {"PAYER": "D", "BENEFICIARY": "B", "PAY_AMT": "50", "PAY_CNT": "1"},
+            {"PAYER": "E", "BENEFICIARY": "B", "PAY_AMT": "20", "PAY_CNT": "1"},
+        ],
+    )
+
+    selected, total = select_payment_rows(path, per_company_direction=1)
+
+    assert selected == {2, 3}
+    assert total == 4

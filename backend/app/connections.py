@@ -2,10 +2,22 @@
 
 from collections import deque
 
+from .config import get_settings
+
 NOTE = (
     "Связи из данных организаторов: платежи, группы и общие обезличенные лица. "
     "Они не доказывают поставку или критическую зависимость; доли относятся только к наблюдаемым платежам."
 )
+
+
+def dataset_note():
+    limit = get_settings().payment_import_limit_per_direction
+    if not limit:
+        return NOTE
+    return NOTE + (
+        f" В этой публикации сохранено до {limit} крупнейших платежных наблюдений "
+        "на компанию в каждом направлении; доли рассчитаны по сохраненной выборке."
+    )
 
 
 def rebuild_payment_connections(db):
@@ -164,7 +176,7 @@ def build_context(db, organization_id, max_depth=3, decay=0.5, max_nodes=32, per
         "max_nodes": max_nodes,
         "truncated": truncated or len(best) >= max_nodes,
         "per_node": per_node,
-        "note": NOTE,
+        "note": dataset_note(),
     }
 
 
@@ -194,5 +206,5 @@ def assess_context(db, context, shocks, propagator, profile_builder):
         "top_paths": affected[:5],
         "max_depth": context.get("max_depth", 3),
         "truncated": context.get("truncated", False),
-        "note": NOTE,
+        "note": dataset_note(),
     }

@@ -22,6 +22,8 @@ services:
         value: organizers
       - key: ORGANIZER_DATA_DIR
         value: /app/ml/data
+      - key: PAYMENT_IMPORT_LIMIT_PER_DIRECTION
+        value: "3"
       - key: LLM_MODE
         value: offline
       - key: ALLOWED_ORIGINS

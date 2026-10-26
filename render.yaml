@@ -25,4 +25,4 @@ services:
       - key: LLM_MODE
         value: offline
       - key: ALLOWED_ORIGINS
-        sync: false
+        value: '["https://alfahack-solution.netlify.app"]'
